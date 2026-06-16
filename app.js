@@ -720,6 +720,10 @@ let knowledgeDatabase = [];
 let isSubscribed = false;
 let selectedPlan = "month";
 let isAudioPlaying = false;
+let reflectionCount = 0; // Tracks alignment reflection saves to delay pricing modal
+
+// Setup Voice Guidance Audio File
+const voiceGuidanceAudio = new Audio("https://coach.mirrormagicmethod.com/guidance.mp3");
 
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -730,6 +734,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const nameParam = urlParams.get("name");
         if (nameParam) userName = decodeURIComponent(nameParam);
         console.log("Subscription status set to true via Tagmango success redirect.");
+    }
+
+    // Attempt to retrieve reflectionCount from localStorage to persist user progress
+    try {
+        const storedCount = localStorage.getItem("reflection_count");
+        if (storedCount) {
+            reflectionCount = parseInt(storedCount, 10);
+        }
+    } catch(e) {
+        console.warn("localStorage not accessible:", e);
     }
 
     initChatFlow();
@@ -847,10 +861,23 @@ function setupEventListeners() {
         if (isAudioPlaying) {
             audioWaveAnim.classList.remove("hidden");
             btnPlayPrompt.innerHTML = '<span class="btn-icon">⏸️</span> Pause Voice Guidance';
+            voiceGuidanceAudio.play().catch(err => {
+                console.warn("Audio playback failed (usually requires user interaction first):", err);
+                // Fallback to alert if audio file is not uploaded yet
+                alert("Voice guidance file (guidance.mp3) is playing. (Please upload guidance.mp3 to your root folder to hear your specific voice guidance)");
+            });
         } else {
             audioWaveAnim.classList.add("hidden");
             btnPlayPrompt.innerHTML = '<span class="btn-icon">🔊</span> Hear Voice Guidance';
+            voiceGuidanceAudio.pause();
         }
+    });
+
+    // Reset UI when audio finishes playing
+    voiceGuidanceAudio.addEventListener("ended", () => {
+        isAudioPlaying = false;
+        audioWaveAnim.classList.add("hidden");
+        btnPlayPrompt.innerHTML = '<span class="btn-icon">🔊</span> Hear Voice Guidance';
     });
 
     // Save Journal click handler
@@ -864,8 +891,34 @@ function setupEventListeners() {
             return;
         }
 
-        // Trigger paywall/subscription modal
-        showSubscriptionModal();
+        // Increment reflection counter and persist it
+        reflectionCount++;
+        try {
+            localStorage.setItem("reflection_count", reflectionCount.toString());
+        } catch(e) {}
+
+        // Clear reflection fields for next session
+        document.getElementById("journal-feel").value = "";
+        document.getElementById("journal-think").value = "";
+        document.getElementById("journal-body").value = "";
+
+        // Log the reflection event inside the current chat timeline
+        addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
+
+        // Check if reflectionCount is exactly 4 or 7 to show the pricing survey modal
+        if (reflectionCount === 4 || reflectionCount === 7) {
+            showSubscriptionModal();
+        } else {
+            // Free alignment path: instantly unlock coach and guide client to coach tab
+            isSubscribed = true;
+            updateLockState();
+            addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
+            switchMobileTab("coach");
+            userInputField.focus();
+            
+            // Post log automatically to sheet
+            saveConversationToGoogleSheets();
+        }
     });
 }
 
