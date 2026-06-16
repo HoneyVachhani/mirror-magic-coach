@@ -1627,7 +1627,8 @@ async function saveConversationToGoogleSheets() {
             keyEmotions: summary.keyEmotions,
             keyTopics: summary.keyTopics,
             programsRecommended: summary.programsRecommended,
-            outcome: summary.outcome + (surveyPriceResponse ? ` | Pricing Feedback: ${surveyPriceResponse}` : "")
+            outcome: summary.outcome,
+            suggestedPrice: surveyPriceResponse || ""
         };
         
         console.log("Sending conversation log to Google Sheets...", payload);
