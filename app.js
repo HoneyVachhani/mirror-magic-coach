@@ -833,19 +833,11 @@ function setupEventListeners() {
 
     // Quick Action: Affirmations
     btnQuickAffirmation.addEventListener("click", () => {
-        if (!isSubscribed) {
-            showSubscriptionModal();
-            return;
-        }
         sendDirectPrompt("Give me a powerful self-love affirmation I can say to my eyes in the mirror right now.");
     });
 
     // Quick Action: Body awareness
     btnBodyAwareness.addEventListener("click", () => {
-        if (!isSubscribed) {
-            showSubscriptionModal();
-            return;
-        }
         sendDirectPrompt("Guide me through a brief body sensation awareness scan before we begin.");
     });
 
@@ -1443,6 +1435,9 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
                         role: "model",
                         parts: [{ text: replyText }]
                     });
+                    
+                    // Update overlay lock state dynamically after each turn
+                    updateLockState();
                     return; // Exit on successful response
                 } else {
                     throw new Error("Invalid response structure");
@@ -1655,7 +1650,9 @@ async function saveConversationToGoogleSheets() {
 // --- Subscription & Lock State Functions ---
 function updateLockState() {
     const isCommunityMember = ["silver", "gold", "diamond", "platinum"].includes(currentClientTier);
-    if (!isFirstHandshake && !isSubscribed && !isCommunityMember) {
+    
+    // Allow leads to message the coach 3 times before locking the chat for feedback/payment suggestions
+    if (!isFirstHandshake && !isSubscribed && !isCommunityMember && exchangeCount >= 3) {
         chatLockOverlay.classList.remove("hidden");
     } else {
         chatLockOverlay.classList.add("hidden");
