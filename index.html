@@ -112,9 +112,12 @@
                 <h2 class="section-title text-gold">✨ Daily Alignment Practice</h2>
                 <p class="alignment-prompt" id="alignment-prompt-text">Look deep into your eyes and ask: <em>"What is it that I am refusing to see about myself?"</em></p>
                 
-                <div class="audio-prompt-container">
+                <div class="audio-prompt-container" style="flex-wrap: wrap;">
                     <button id="btn-play-prompt" class="btn btn-secondary btn-pill">
                         <span class="btn-icon">🔊</span> Hear Voice Guidance
+                    </button>
+                    <button id="btn-play-music" class="btn btn-secondary btn-pill">
+                        <span class="btn-icon">🎵</span> Play Healing Music (528Hz)
                     </button>
                     <div class="audio-wave hidden" id="audio-wave-anim">
                         <span class="stroke"></span>
@@ -156,15 +159,24 @@
                 <div class="journal-form" id="journal-fields-container">
                     <div class="form-group">
                         <label for="journal-feel">1. How did you feel looking in the mirror?</label>
-                        <textarea id="journal-feel" placeholder="e.g. vulnerable, resistant, light..." rows="2"></textarea>
+                        <div class="input-mic-wrapper">
+                            <textarea id="journal-feel" placeholder="e.g. vulnerable, resistant, light..." rows="2"></textarea>
+                            <button type="button" class="btn-mic" id="btn-mic-feel" onclick="toggleSpeechToText('journal-feel', 'btn-mic-feel')" title="Dictate answer with your voice">🎙️</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="journal-think">2. What did you think?</label>
-                        <textarea id="journal-think" placeholder="What thoughts came up?" rows="2"></textarea>
+                        <div class="input-mic-wrapper">
+                            <textarea id="journal-think" placeholder="What thoughts came up?" rows="2"></textarea>
+                            <button type="button" class="btn-mic" id="btn-mic-think" onclick="toggleSpeechToText('journal-think', 'btn-mic-think')" title="Dictate answer with your voice">🎙️</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="journal-body">3. Where in your body did you feel it?</label>
-                        <textarea id="journal-body" placeholder="e.g. tightness in chest, warmth in heart..." rows="2"></textarea>
+                        <div class="input-mic-wrapper">
+                            <textarea id="journal-body" placeholder="e.g. tightness in chest, warmth in heart..." rows="2"></textarea>
+                            <button type="button" class="btn-mic" id="btn-mic-body" onclick="toggleSpeechToText('journal-body', 'btn-mic-body')" title="Dictate answer with your voice">🎙️</button>
+                        </div>
                     </div>
                     <button id="btn-save-journal" class="btn btn-primary btn-block">
                         Save Reflection & Access Coach

@@ -1200,3 +1200,41 @@ html, body {
     position: relative; /* ensure absolute positioning works for lock-overlay */
 }
 
+/* Microphone Input Integration Styling */
+.input-mic-wrapper {
+    position: relative;
+    width: 100%;
+}
+.input-mic-wrapper textarea {
+    padding-right: 44px; /* Leave space for mic button */
+}
+.btn-mic {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    background: rgba(183, 140, 45, 0.08);
+    border: 1px solid var(--color-border-glass);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.94rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    outline: none;
+    user-select: none;
+}
+.btn-mic:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    transform: scale(1.08);
+}
+.btn-mic.recording {
+    background: #ff3b30;
+    color: #ffffff;
+    border-color: #ff3b30;
+    animation: gentle-pulse 1.5s infinite alternate;
+}
+

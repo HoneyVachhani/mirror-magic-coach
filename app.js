@@ -855,6 +855,32 @@ function setupEventListeners() {
         sendDirectPrompt("Guide me through a brief body sensation awareness scan before we begin.");
     });
 
+    // Setup Calming Background Music Audio (528Hz Solfeggio Frequency)
+    const backgroundMusicAudio = new Audio("https://coach.mirrormagicmethod.com/healing-music.mp3");
+    backgroundMusicAudio.loop = true;
+    backgroundMusicAudio.volume = 0.45; // Soft background level
+    let isMusicPlaying = false;
+
+    // Healing Music play handler
+    const btnPlayMusic = document.getElementById("btn-play-music");
+    btnPlayMusic.addEventListener("click", () => {
+        isMusicPlaying = !isMusicPlaying;
+        if (isMusicPlaying) {
+            btnPlayMusic.innerHTML = '<span class="btn-icon">⏸️</span> Pause Music';
+            btnPlayMusic.classList.remove("btn-secondary");
+            btnPlayMusic.classList.add("btn-primary");
+            backgroundMusicAudio.play().catch(err => {
+                console.warn("Music play failed:", err);
+                alert("Music is loading. Please upload 'healing-music.mp3' to your root directory to play soft background Solfeggio frequencies.");
+            });
+        } else {
+            btnPlayMusic.innerHTML = '<span class="btn-icon">🎵</span> Play Healing Music (528Hz)';
+            btnPlayMusic.classList.remove("btn-primary");
+            btnPlayMusic.classList.add("btn-secondary");
+            backgroundMusicAudio.pause();
+        }
+    });
+
     // Play Voice Prompt click handler
     btnPlayPrompt.addEventListener("click", () => {
         isAudioPlaying = !isAudioPlaying;
@@ -1806,12 +1832,93 @@ async function submitPricingSurvey() {
     userInputField.focus();
 }
 
+// Web Speech API - Speech to Text Dictation
+let activeRecognition = null;
+let activeMicButtonId = null;
+
+function toggleSpeechToText(targetFieldId, micButtonId) {
+    const targetField = document.getElementById(targetFieldId);
+    const micBtn = document.getElementById(micButtonId);
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Your browser does not support voice dictation. Please try using Google Chrome or Safari.");
+        return;
+    }
+    
+    // If clicking the currently recording button, stop it
+    if (activeRecognition && activeMicButtonId === micButtonId) {
+        activeRecognition.stop();
+        activeRecognition = null;
+        activeMicButtonId = null;
+        micBtn.classList.remove("recording");
+        micBtn.textContent = "🎙️";
+        return;
+    }
+    
+    // If another microphone was recording, stop it first
+    if (activeRecognition) {
+        const oldMicBtn = document.getElementById(activeMicButtonId);
+        if (oldMicBtn) {
+            oldMicBtn.classList.remove("recording");
+            oldMicBtn.textContent = "🎙️";
+        }
+        activeRecognition.stop();
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false; // Capture one clear phrase at a time
+    recognition.interimResults = false;
+    recognition.lang = "en-IN"; // Support English with Indian pronunciation defaults, handles Hindi terms too
+    
+    recognition.onstart = () => {
+        activeRecognition = recognition;
+        activeMicButtonId = micButtonId;
+        micBtn.classList.add("recording");
+        micBtn.textContent = "🛑";
+    };
+    
+    recognition.onresult = (event) => {
+        const transcriptText = event.results[0][0].transcript;
+        
+        // Append voice-to-text input to the current value of the textarea
+        if (targetField.value.trim()) {
+            targetField.value = targetField.value.trim() + " " + transcriptText;
+        } else {
+            targetField.value = transcriptText;
+        }
+        
+        // Trigger input event to update autosize properties if any
+        targetField.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === 'not-allowed') {
+            alert("Microphone permission denied. Please allow microphone access in your browser settings.");
+        }
+    };
+    
+    recognition.onend = () => {
+        micBtn.classList.remove("recording");
+        micBtn.textContent = "🎙️";
+        if (activeMicButtonId === micButtonId) {
+            activeRecognition = null;
+            activeMicButtonId = null;
+        }
+    };
+    
+    recognition.start();
+}
+
 // Expose functions to global scope for HTML inline handlers
 window.selectSubscription = selectSubscription;
 window.closeSubscriptionModal = closeSubscriptionModal;
 window.showSubscriptionModal = showSubscriptionModal;
 window.switchMobileTab = switchMobileTab;
 window.submitPricingSurvey = submitPricingSurvey;
+window.toggleSpeechToText = toggleSpeechToText;
+
 
 
 
