@@ -723,7 +723,7 @@ let isAudioPlaying = false;
 let reflectionCount = 0; // Tracks alignment reflection saves to delay pricing modal
 
 // Setup Voice Guidance Audio File
-const voiceGuidanceAudio = new Audio("https://coach.mirrormagicmethod.com/guidance.mp3");
+const voiceGuidanceAudio = new Audio("guidance.mp3");
 
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -856,7 +856,7 @@ function setupEventListeners() {
     });
 
     // Setup Calming Background Music Audio (528Hz Solfeggio Frequency)
-    const backgroundMusicAudio = new Audio("https://coach.mirrormagicmethod.com/healing-music.mp3");
+    const backgroundMusicAudio = new Audio("healing-music.mp3");
     backgroundMusicAudio.loop = true;
     backgroundMusicAudio.volume = 0.45; // Soft background level
     let isMusicPlaying = false;
@@ -871,7 +871,6 @@ function setupEventListeners() {
             btnPlayMusic.classList.add("btn-primary");
             backgroundMusicAudio.play().catch(err => {
                 console.warn("Music play failed:", err);
-                alert("Music is loading. Please upload 'healing-music.mp3' to your root directory to play soft background Solfeggio frequencies.");
             });
         } else {
             btnPlayMusic.innerHTML = '<span class="btn-icon">🎵</span> Play Healing Music (528Hz)';
@@ -889,8 +888,6 @@ function setupEventListeners() {
             btnPlayPrompt.innerHTML = '<span class="btn-icon">⏸️</span> Pause Voice Guidance';
             voiceGuidanceAudio.play().catch(err => {
                 console.warn("Audio playback failed (usually requires user interaction first):", err);
-                // Fallback to alert if audio file is not uploaded yet
-                alert("Voice guidance file (guidance.mp3) is playing. (Please upload guidance.mp3 to your root folder to hear your specific voice guidance)");
             });
         } else {
             audioWaveAnim.classList.add("hidden");
