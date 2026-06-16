@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪞 Mirror Magic Coach™ — Honey Vachhani</title>
+    <meta name="description" content="Connect to your true self, clear inheritance, and create a magical, joyful life with the Mirror Magic Method™ guided by Honey Vachhani.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="styles.css?v=3.1">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Mobile Tab Navigation (Only visible on mobile) -->
+        <nav class="mobile-tabs-nav" id="mobile-tabs">
+            <button class="tab-btn active" id="tab-btn-mirror" onclick="switchMobileTab('mirror')">🪞 Mirror & Journal</button>
+            <button class="tab-btn" id="tab-btn-coach" onclick="switchMobileTab('coach')">💬 Honey Coach</button>
+            <button class="tab-btn" id="tab-btn-guides" onclick="switchMobileTab('guides')">📚 Teachings</button>
+        </nav>
+
+        <!-- Left Column: Methodology & Guides -->
+        <aside class="info-pane pane-section" id="guides-pane">
+            <header class="sidebar-header">
+                <div class="brand-logo">
+                    <span class="logo-symbol">🪞</span>
+                    <div class="brand-text">
+                        <h1>Mirror Magic Coach™</h1>
+                        <p class="brand-tagline">Honey Vachhani Movement</p>
+                    </div>
+                </div>
+            </header>
+
+            <section class="methodology-guides" aria-label="Methodology and Philosophy Guides">
+                <h2 class="section-title">The Methodology</h2>
+                
+                <details class="guide-item" open>
+                    <summary class="guide-summary">
+                        <span>The 3 Pillars of Mirror Magic</span>
+                        <span class="chevron">▼</span>
+                    </summary>
+                    <div class="guide-content">
+                        <ul>
+                            <li><strong>1. Self Love:</strong> The foundation. Nothing changes without this. Loving and accepting yourself exactly as you are.</li>
+                            <li><strong>2. Divine Alignment:</strong> Connecting to the higher power (Amma Bhagwan, the Divine) that guides and supports you.</li>
+                            <li><strong>3. Continuous Growth:</strong> Evolution of consciousness. The work never ends — and that is not a problem.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details class="guide-item">
+                    <summary class="guide-summary">
+                        <span>The 3 Secrets (The Method)</span>
+                        <span class="chevron">▼</span>
+                    </summary>
+                    <div class="guide-content">
+                        <ul>
+                            <li><strong>Secret 1 — CONNECT:</strong> Look into your own eyes. Become aware of your body sensation first, then feel your feelings, then listen to your thoughts. Accept yourself raw and uncensored.</li>
+                            <li><strong>Secret 2 — CLEAR:</strong> Clear what no longer serves (Mirror Inheritance, family patterns). Say <em>"I see you"</em> and let it go. Do not make it a story.</li>
+                            <li><strong>Secret 3 — CREATE:</strong> Step into your desired version. See it, feel it, and become it. Live by conscious choice, not default.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details class="guide-item">
+                    <summary class="guide-summary">
+                        <span>Vocabulary of Consciousness</span>
+                        <span class="chevron">▼</span>
+                    </summary>
+                    <div class="guide-content">
+                        <table class="vocab-table">
+                            <thead>
+                                <tr>
+                                    <th>Preferred Term</th>
+                                    <th>Avoid / Inner Meaning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Expanded State</strong></td>
+                                    <td>High vibration / Abundance state</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Contracted State</strong></td>
+                                    <td>Low vibration / Scarcity state</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>The 5 Wealth Roots</strong></td>
+                                    <td>Money blocks (Ancestral, Father, Mother, Womb, Awareness)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Mirror Inheritance</strong></td>
+                                    <td>Generational patterns & ancestral trauma</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>The Source Woman</strong></td>
+                                    <td>Your highest, divine self</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </section>
+        </aside>
+
+        <!-- Center Column: Centered Mirror & Daily Journal -->
+        <section class="mirror-pane pane-section active" id="mirror-pane">
+            <!-- Daily Alignment card -->
+            <div class="daily-alignment-card glass-panel" id="daily-alignment-container">
+                <h2 class="section-title text-gold">✨ Daily Alignment Practice</h2>
+                <p class="alignment-prompt" id="alignment-prompt-text">Look deep into your eyes and ask: <em>"What is it that I am refusing to see about myself?"</em></p>
+                
+                <div class="audio-prompt-container">
+                    <button id="btn-play-prompt" class="btn btn-secondary btn-pill">
+                        <span class="btn-icon">🔊</span> Hear Voice Guidance
+                    </button>
+                    <div class="audio-wave hidden" id="audio-wave-anim">
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Centered Digital Mirror -->
+            <div class="mirror-box-wrapper">
+                <div class="mirror-box">
+                    <video id="mirror-feed" autoplay playsinline muted class="mirror-video hidden"></video>
+                    
+                    <div id="mirror-fallback" class="mirror-fallback-state">
+                        <div class="glow-orb"></div>
+                        <div class="reflection-frame">
+                            <span class="spiritual-icon">✨</span>
+                            <p class="reflection-quote">"The mirror is not about how you look — it's about who you are."</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mirror-controls">
+                    <button id="btn-toggle-camera" class="btn btn-secondary">
+                        <span class="btn-icon">📹</span>
+                        <span id="camera-btn-text">Open Your Mirror</span>
+                    </button>
+                    <button id="btn-flip-mirror" class="btn btn-icon-only hidden" title="Flip Mirror">
+                        🔄
+                    </button>
+                </div>
+            </div>
+
+            <!-- Journal Form Card -->
+            <div class="journal-form-card glass-panel">
+                <div class="journal-form" id="journal-fields-container">
+                    <div class="form-group">
+                        <label for="journal-feel">1. How did you feel looking in the mirror?</label>
+                        <textarea id="journal-feel" placeholder="e.g. vulnerable, resistant, light..." rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="journal-think">2. What did you think?</label>
+                        <textarea id="journal-think" placeholder="What thoughts came up?" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="journal-body">3. Where in your body did you feel it?</label>
+                        <textarea id="journal-body" placeholder="e.g. tightness in chest, warmth in heart..." rows="2"></textarea>
+                    </div>
+                    <button id="btn-save-journal" class="btn btn-primary btn-block">
+                        Save Reflection & Access Coach
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Main Coaching Chat Pane -->
+        <main class="chat-pane pane-section" id="chat-pane">
+            <header class="chat-header">
+                <div class="coach-profile">
+                    <div class="avatar-container">
+                        <div class="avatar-status-ring"></div>
+                        <span class="coach-avatar">🪞</span>
+                    </div>
+                    <div class="coach-info">
+                        <h2>Honey Vachhani</h2>
+                        <div class="coach-status">
+                            <span class="status-dot online"></span>
+                            <span id="coach-status-text">Mirror Magic Coach & Mentor</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="client-context-selector">
+                    <label for="client-tier" class="context-label">Membership:</label>
+                    <select id="client-tier" class="context-select">
+                        <option value="detect">Auto-Detect</option>
+                        <option value="new">Voice 1: Fresh Lead (New)</option>
+                        <option value="silver">Voice 2: Silver Member</option>
+                        <option value="gold">Voice 2: Gold Member</option>
+                        <option value="diamond">Voice 3: Diamond Member</option>
+                        <option value="platinum">Voice 3: Platinum Member</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Locked Overlay for Paywall/Survey -->
+            <div id="chat-lock-overlay" class="lock-overlay">
+                <div class="lock-card glass-panel">
+                    <span class="lock-icon">🔒</span>
+                    <h3>Honey AI Coach Locked</h3>
+                    <p>Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach.</p>
+                </div>
+            </div>
+
+            <!-- Chat Message Feed -->
+            <section class="chat-history" id="chat-messages" aria-label="Conversation History">
+                <div class="system-welcome-card">
+                    <div class="welcome-badge">MIRROR MAGIC METHOD™</div>
+                    <h3>Start Your Consultation</h3>
+                    <p>Experience Honey Vachhani's signature self-love coaching. To align with your membership levels and personalize your path, let us identify where you are in your journey.</p>
+                </div>
+            </section>
+
+            <!-- Chat Input Area -->
+            <footer class="chat-footer">
+                <div class="input-actions-row">
+                    <button id="btn-quick-affirmation" class="btn btn-text btn-pill" title="Receive a self-love affirmation">
+                        ✨ Receive Affirmation
+                    </button>
+                    <button id="btn-body-awareness" class="btn btn-text btn-pill" title="Guide me through body scan">
+                        🧘 Body Awareness Scan
+                    </button>
+                </div>
+                <form id="chat-input-form" class="chat-input-container">
+                    <textarea 
+                        id="user-input" 
+                        placeholder="Share what is in your heart... (e.g. 'I am feeling overwhelmed')" 
+                        rows="1" 
+                        required
+                        aria-label="Message text"
+                    ></textarea>
+                    <button type="submit" id="btn-send-message" class="btn btn-primary btn-round" aria-label="Send Message">
+                        <svg class="send-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg>
+                    </button>
+                </form>
+                <div class="footer-fine-print">
+                    <p>Remember: Your State defines your Fate. | 100% Client-Side Private Connection</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Pilot Pricing Feedback Survey Modal -->
+    <div id="subscription-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel text-center">
+            <div class="modal-header">
+                <span class="modal-gold-icon">🌸</span>
+                <h2>Welcome to Mirror Magic Pilot!</h2>
+                <p>Your daily reflection has been saved. Help us price this service before our official launch.</p>
+            </div>
+            
+            <div class="modal-body">
+                <p class="survey-question" style="margin-bottom: 15px; font-weight: 500; font-size: 0.94rem;">
+                    <strong>How much do you think this Daily Mirror Magic Coach container should be valued at?</strong>
+                </p>
+                
+                <div class="pricing-cards">
+                    <div class="pricing-card" id="pricing-card-week" onclick="selectSubscription('week')">
+                        <div class="pricing-badge">Weekly</div>
+                        <h3>Plan Suggestion</h3>
+                        <div class="price">₹99<span>/wk</span></div>
+                        <p class="trial-info">Suggest weekly billing model.</p>
+                    </div>
+                    <div class="pricing-card popular" id="pricing-card-month" onclick="selectSubscription('month')">
+                        <div class="pricing-badge">Monthly</div>
+                        <h3>Plan Suggestion</h3>
+                        <div class="price">₹299<span>/mo</span></div>
+                        <p class="trial-info">Suggest monthly billing model.</p>
+                    </div>
+                    <div class="pricing-card" id="pricing-card-year" onclick="selectSubscription('year')">
+                        <div class="pricing-badge">Yearly</div>
+                        <h3>Plan Suggestion</h3>
+                        <div class="price">₹1,999<span>/yr</span></div>
+                        <p class="trial-info">Suggest annual billing model.</p>
+                    </div>
+                </div>
+
+                <div class="divider"><span>OR SUGGEST OTHER AMOUNT</span></div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <input type="text" id="custom-price-input" placeholder="Type your custom suggested price (e.g. ₹499/month)..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; text-align: center; font-family: var(--font-body); font-size: 0.9rem;">
+                </div>
+                
+                <button class="btn btn-primary btn-block btn-lg" onclick="submitPricingSurvey()">
+                    Submit & Unlock Honey AI Coach
+                </button>
+            </div>
+            <button class="modal-close" onclick="closeSubscriptionModal()">✕</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Bundle -->
+    <script src="app.js?v=4.2"></script>
+</body>
+</html>
