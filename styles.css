@@ -1002,9 +1002,11 @@ html, body {
     backdrop-filter: blur(15px);
     z-index: 2000;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Align to top to allow scrolling down */
     justify-content: center;
     padding: 20px;
+    overflow-y: auto; /* Allow overlay scrolling */
+    -webkit-overflow-scrolling: touch;
     animation: fade-in 0.3s ease-out;
 }
 .modal-content {
@@ -1013,10 +1015,12 @@ html, body {
     border-radius: 24px;
     max-width: 650px;
     width: 100%;
-    padding: 35px;
+    padding: 35px 25px 25px 25px;
     box-shadow: 0 20px 50px rgba(46, 21, 59, 0.2);
     position: relative;
     text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 .modal-gold-icon {
     font-size: 3rem;
