@@ -928,8 +928,8 @@ function setupEventListeners() {
         // Log the reflection event inside the current chat timeline
         addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
 
-        // Check if reflectionCount is exactly 4 or 7 to show the pricing survey modal
-        if (reflectionCount === 4 || reflectionCount === 7) {
+        // Check if reflectionCount is greater than or equal to 4 to show the pricing survey modal
+        if (reflectionCount >= 4) {
             showSubscriptionModal();
         } else {
             // Free alignment path: instantly unlock coach and guide client to coach tab
@@ -1798,18 +1798,40 @@ function switchMobileTab(tab) {
     }
 }
 
+// Toggle Custom Price Input display based on radio choice
+function toggleCustomPriceInput(show) {
+    const customField = document.getElementById("custom-price-field");
+    if (show) {
+        customField.classList.remove("hidden");
+        document.getElementById("custom-price-input").focus();
+    } else {
+        customField.classList.add("hidden");
+    }
+}
+
 // Submit Pilot Pricing Feedback Survey
 let surveyPriceResponse = "";
 
 async function submitPricingSurvey() {
+    const selectedRadio = document.querySelector('input[name="survey-pricing"]:checked');
     const customInput = document.getElementById("custom-price-input").value.trim();
     
-    if (customInput) {
-        surveyPriceResponse = customInput;
+    if (selectedRadio) {
+        const choice = selectedRadio.value;
+        if (choice === "exclusive-standalone") {
+            surveyPriceResponse = "₹999/month (Exclusive Standalone)";
+        } else if (choice === "silver-bundle") {
+            surveyPriceResponse = "Silver Membership Bundle (₹9,999/year)";
+        } else if (choice === "custom-amount") {
+            if (customInput) {
+                surveyPriceResponse = `Custom: ${customInput}`;
+            } else {
+                alert("Please type your custom suggested amount or choose another option.");
+                return;
+            }
+        }
     } else {
-        if (selectedPlan === "week") surveyPriceResponse = "₹99/weekly";
-        else if (selectedPlan === "month") surveyPriceResponse = "₹299/monthly";
-        else if (selectedPlan === "year") surveyPriceResponse = "₹1,999/yearly";
+        surveyPriceResponse = "No selection";
     }
     
     // Unlock the coach
@@ -1915,6 +1937,7 @@ window.showSubscriptionModal = showSubscriptionModal;
 window.switchMobileTab = switchMobileTab;
 window.submitPricingSurvey = submitPricingSurvey;
 window.toggleSpeechToText = toggleSpeechToText;
+window.toggleCustomPriceInput = toggleCustomPriceInput;
 
 
 
