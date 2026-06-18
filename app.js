@@ -1284,8 +1284,8 @@ async function queryHoneyAgent() {
     showTypingIndicator();
     
     try {
-        // Auto-save and close after 8 exchanges
-        if (exchangeCount >= 8) {
+        // Auto-save and close after 20 exchanges
+        if (exchangeCount >= 20) {
             hideTypingIndicator();
             const closingText = "Our session has reached its natural completion for today to let your reflections settle. Go gently. The mirror is always here when you need it.";
             addCoachMessage(closingText, []);
@@ -1294,8 +1294,8 @@ async function queryHoneyAgent() {
             return;
         }
 
-        // Exchange closure check: Offer closure after minimum 6 exchanges AND when last message shows resolution, not a question
-        if (exchangeCount >= 6) {
+        // Exchange closure check: Offer closure after minimum 10 exchanges AND when last message shows resolution, not a question
+        if (exchangeCount >= 10) {
             const lastMsg = conversationHistory[conversationHistory.length - 1];
             const lastUserText = (lastMsg && lastMsg.role === "user" && lastMsg.parts && lastMsg.parts[0]) ? lastMsg.parts[0].text : "";
             
