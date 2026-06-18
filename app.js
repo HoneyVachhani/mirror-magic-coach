@@ -763,6 +763,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setupEventListeners();
     updateLockState();
     
+    // Check and update referral status
+    checkReferrerUrl();
+    updateReferralUI();
+    
     // Fetch local static knowledge base
     fetch("knowledge.json")
         .then(res => res.json())
@@ -1706,6 +1710,9 @@ async function saveConversationToGoogleSheets() {
             return `[${roleName}]: ${text}`;
         }).join("\n\n");
         
+        const userEmail = localStorage.getItem("mirror_user_email") || "";
+        const referrerEmail = localStorage.getItem("mirror_referrer_email") || "";
+
         const payload = {
             date: dateStr,
             time: timeStr,
@@ -1717,7 +1724,9 @@ async function saveConversationToGoogleSheets() {
             keyTopics: summary.keyTopics,
             programsRecommended: summary.programsRecommended,
             outcome: summary.outcome,
-            suggestedPrice: surveyPriceResponse || ""
+            suggestedPrice: surveyPriceResponse || "",
+            email: userEmail,
+            referrerEmail: referrerEmail
         };
         
         console.log("Sending conversation log to Google Sheets...", payload);
@@ -1951,6 +1960,145 @@ window.switchMobileTab = switchMobileTab;
 window.submitPricingSurvey = submitPricingSurvey;
 window.toggleSpeechToText = toggleSpeechToText;
 window.toggleCustomPriceInput = toggleCustomPriceInput;
+
+// --- Compounding Referral Program Implementation ---
+
+// 1. Capture Referrer from URL
+function checkReferrerUrl() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ref = urlParams.get("ref");
+        if (ref) {
+            // Validate referrer format briefly
+            if (ref.includes("@") && ref.includes(".")) {
+                localStorage.setItem("mirror_referrer_email", ref.trim().toLowerCase());
+                console.log("Referrer email captured:", ref.trim().toLowerCase());
+            }
+        }
+    } catch(e) {
+        console.warn("Failed to check referrer URL parameters:", e);
+    }
+}
+
+// 2. User Registration and UI State management
+async function registerUserReferral() {
+    const emailInput = document.getElementById("referral-email-input");
+    const emailVal = emailInput.value.trim().toLowerCase();
+    
+    if (!emailVal || !emailVal.includes("@") || !emailVal.includes(".")) {
+        alert("Please enter a valid email address.");
+        return;
+    }
+    
+    localStorage.setItem("mirror_user_email", emailVal);
+    
+    // Update the UI immediately
+    await updateReferralUI();
+    
+    // Trigger sheet update to log registration if referrer exists
+    const referrerEmail = localStorage.getItem("mirror_referrer_email") || "";
+    if (referrerEmail) {
+        console.log(`User ${emailVal} referred by ${referrerEmail}. Logging to sheet...`);
+        // Trigger a minimal conversation log containing registration mapping
+        try {
+            await fetch(GOOGLE_SCRIPT_WEBAPP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString(),
+                    name: userName || "Anonymous (Registered for Referral)",
+                    membershipLevel: currentClientTier || "new",
+                    howFoundUs: `Referred by ${referrerEmail}`,
+                    transcript: "System: Registration log mapping.",
+                    keyEmotions: "None",
+                    keyTopics: "Referral Onboarding",
+                    programsRecommended: "None",
+                    outcome: "Registered",
+                    email: emailVal,
+                    referrerEmail: referrerEmail
+                })
+            });
+        } catch (err) {
+            console.error("Failed to post registration log to Sheets:", err);
+        }
+    }
+}
+
+// 3. Dynamic Display & Progress Bar updates
+async function updateReferralUI() {
+    const userEmail = localStorage.getItem("mirror_user_email");
+    if (!userEmail) return;
+    
+    const regForm = document.getElementById("referral-register-form");
+    const infoDisplay = document.getElementById("referral-info-display");
+    const linkDisplay = document.getElementById("referral-link-display");
+    
+    if (regForm) regForm.classList.add("hidden");
+    if (infoDisplay) infoDisplay.classList.remove("hidden");
+    if (linkDisplay) linkDisplay.value = `https://coach.mirrormagicmethod.com/?ref=${userEmail}`;
+    
+    // Call Sheets Webhook for stats
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        return;
+    }
+    
+    try {
+        const fetchUrl = `${scriptUrl}?action=getReferrals&email=${encodeURIComponent(userEmail)}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        
+        if (data && data.status === "success") {
+            const count = data.total_successful_referrals || 0;
+            const days = data.premium_days_credited || 0;
+            
+            document.getElementById("referral-count-val").textContent = count;
+            document.getElementById("referral-days-val").textContent = `${days} days`;
+            
+            // Calculate progress to next multiple of 5
+            const nextMilestone = Math.ceil((count + 1) / 5) * 5 || 5;
+            const prevMilestone = nextMilestone - 5;
+            const progressCount = count - prevMilestone;
+            const progressPercent = (progressCount / 5) * 100;
+            
+            document.getElementById("referral-progress-bar").style.width = `${progressPercent}%`;
+            document.getElementById("referral-progress-text").textContent = `${progressCount}/5 to next reward`;
+        }
+    } catch(e) {
+        console.warn("Could not retrieve referral statistics from Google Sheets:", e);
+    }
+}
+
+// 4. Copy Referral Link Helper
+function copyReferralLink() {
+    const linkDisplay = document.getElementById("referral-link-display");
+    if (!linkDisplay) return;
+    
+    linkDisplay.select();
+    linkDisplay.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        navigator.clipboard.writeText(linkDisplay.value);
+        alert("Referral link copied to clipboard!");
+    } catch (err) {
+        // Fallback for older browsers
+        try {
+            document.execCommand("copy");
+            alert("Referral link copied to clipboard!");
+        } catch(e) {
+            console.error("Failed to copy text:", e);
+        }
+    }
+}
+
+// Expose referral functions to global scope
+window.registerUserReferral = registerUserReferral;
+window.copyReferralLink = copyReferralLink;
+window.updateReferralUI = updateReferralUI;
+window.checkReferrerUrl = checkReferrerUrl;
+
 
 
 

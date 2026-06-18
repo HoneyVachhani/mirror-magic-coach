@@ -183,6 +183,51 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Referral Dashboard Card -->
+            <div class="referral-dashboard-card glass-panel" id="referral-dashboard-container" style="margin-top: 20px;">
+                <h2 class="section-title text-gold" style="font-size: 1.25rem; margin-bottom: 10px;">✨ Referral Program</h2>
+                <div class="referral-box-content" style="background-color: #fffbf2; border: 2px solid var(--color-primary); border-radius: 14px; padding: 20px; color: #1C1C1E; text-align: left; font-family: var(--font-body); font-size: 0.94rem; box-shadow: 0 4px 12px rgba(183, 140, 45, 0.05);">
+                    <p style="margin-bottom: 15px; font-weight: 500; line-height: 1.5; color: #1C1C1E;">
+                        <strong>Expand Your Lineage, Earn Premium Mirror Access.</strong> When one soul heals, it heals an entire lineage. For every 5 friends or family members who use your link below to step in front of the mirror and save their first reflection, our system will automatically add 7 free days of premium access to your account.
+                    </p>
+                    
+                    <!-- Registration State -->
+                    <div id="referral-register-form">
+                        <p style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">Enter your email to generate your custom lineage referral link:</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="email" id="referral-email-input" placeholder="Enter your email address..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.9rem;">
+                            <button id="btn-referral-register" class="btn btn-primary" onclick="registerUserReferral()" style="padding: 10px 20px;">Register</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lineage Link State (Hidden by default) -->
+                    <div id="referral-info-display" class="hidden">
+                        <div style="margin-bottom: 15px;">
+                            <span style="font-size: 0.82rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Your Unique Lineage Referral Link:</span>
+                            <div style="display: flex; gap: 8px; align-items: center; background: #ffffff; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(183, 140, 45, 0.2);">
+                                <input type="text" id="referral-link-display" readonly style="flex: 1; border: none; background: transparent; font-family: monospace; font-size: 0.85rem; color: #1C1C1E; outline: none;" value="">
+                                <button class="btn btn-secondary btn-sm" onclick="copyReferralLink()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; white-space: nowrap;">Copy Link</button>
+                            </div>
+                        </div>
+                        
+                        <div style="border-top: 1px dashed rgba(183, 140, 45, 0.2); padding-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 500; margin-bottom: 8px;">
+                                <span>Successful Referrals: <strong id="referral-count-val" style="color: var(--color-primary);">0</strong></span>
+                                <span>Premium Days Credited: <strong id="referral-days-val" style="color: var(--color-primary);">0 days</strong></span>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div style="margin-bottom: 5px;">
+                                <div style="width: 100%; background: rgba(183, 140, 45, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
+                                    <div id="referral-progress-bar" style="background: var(--color-primary); width: 0%; height: 100%; transition: width 0.4s ease;"></div>
+                                </div>
+                            </div>
+                            <div id="referral-progress-text" style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right;">0/5 to next reward</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Right Column: Main Coaching Chat Pane -->
