@@ -20,6 +20,8 @@ function doGet(e) {
       // Assume column L (index 11) is User Email, column M (index 12) is Referrer Email
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
+        if (row.length < 13) continue;
+        
         var userEmail = (row[11] || "").toString().trim().toLowerCase();
         var referrerEmail = (row[12] || "").toString().trim().toLowerCase();
         
@@ -57,7 +59,7 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
     
-    // Add header row if empty to match the sheet layout exactly
+    // Add header row if empty
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "Date", 
@@ -75,6 +77,13 @@ function doPost(e) {
         "Referrer Email"
       ]);
       sheet.getRange("A1:M1").setFontWeight("bold");
+    } else {
+      // Ensure headers exist in columns L and M for existing sheet
+      var headerL = sheet.getRange("L1").getValue();
+      if (!headerL) {
+        sheet.getRange("L1").setValue("User Email").setFontWeight("bold");
+        sheet.getRange("M1").setValue("Referrer Email").setFontWeight("bold");
+      }
     }
     
     // Append the row matching the 13 columns in the sheet
