@@ -2169,7 +2169,7 @@ function updateLockState() {
     const isCommunityMember = ["silver", "gold", "diamond", "platinum"].includes(currentClientTier);
     const reflectionSaved = localStorage.getItem("last_reflection_date") === new Date().toDateString();
     
-    if (!isSubscribed && !isCommunityMember && !reflectionSaved) {
+    if (!isFirstHandshake && !isSubscribed && !isCommunityMember && !reflectionSaved) {
         lockOverlay.classList.remove("hidden");
         lockOverlay.innerHTML = `
             <div class="lock-card glass-panel">
