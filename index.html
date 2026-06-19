@@ -13,6 +13,50 @@
     <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 <body>
+    <!-- Mandatory Onboarding Modal -->
+    <div id="onboarding-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 480px;">
+            <div class="modal-header">
+                <span class="modal-gold-icon">✨</span>
+                <h2 id="onboard-title">Welcome to Mirror Magic</h2>
+                <p id="onboard-subtitle">Step in front of the mirror, start your 7-day free trial, and access Honey's AI Coach.</p>
+            </div>
+            
+            <div class="modal-body">
+                <form id="onboarding-form" onsubmit="submitOnboardingForm(event)" style="text-align: left; display: flex; flex-direction: column; gap: 15px;">
+                    <div class="form-group">
+                        <label for="onboard-lang" id="label-onboard-lang" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Choose Language / भाषा चुनें</label>
+                        <select id="onboard-lang" class="context-select" style="width: 100%; font-weight: 600; padding: 12px; border-radius: 12px; background: #ffffff;">
+                            <option value="en">🌐 English</option>
+                            <option value="hi">🌐 हिंदी / Hindi</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="onboard-name" id="label-onboard-name" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Full Name</label>
+                        <input type="text" id="onboard-name" placeholder="Enter your full name..." required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="onboard-email" id="label-onboard-email" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Email Address</label>
+                        <input type="email" id="onboard-email" placeholder="Enter your email address..." required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="onboard-phone" id="label-onboard-phone" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Phone Number (with WhatsApp)</label>
+                        <input type="tel" id="onboard-phone" placeholder="Enter your phone number..." required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
+                    </div>
+
+                    <div id="referrer-info-msg" class="hidden" style="font-size: 0.85rem; color: var(--color-primary); font-weight: 500; margin-top: 5px;"></div>
+                    
+                    <button type="submit" id="btn-onboard-submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 10px; padding: 14px; font-weight: 600; font-size: 1.05rem;">
+                        Start Free Trial & Open App
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Mobile Tab Navigation (Only visible on mobile) -->
         <nav class="mobile-tabs-nav" id="mobile-tabs">
@@ -247,7 +291,12 @@
                     </div>
                 </div>
                 
-                <div class="client-context-selector">
+                <div class="client-context-selector" style="display: flex; gap: 8px; align-items: center;">
+                    <select id="language-toggle" class="context-select" style="font-weight: 600;">
+                        <option value="en">🌐 English</option>
+                        <option value="hi">🌐 हिंदी / Hindi</option>
+                    </select>
+                    
                     <label for="client-tier" class="context-label">Membership:</label>
                     <select id="client-tier" class="context-select">
                         <option value="detect">Auto-Detect</option>
@@ -259,6 +308,20 @@
                     </select>
                 </div>
             </header>
+
+            <!-- Day 5-7 Promo Banner -->
+            <div id="promo-banner" class="promo-banner hidden">
+                <div class="promo-content">
+                    <span class="promo-icon">✨</span>
+                    <div class="promo-text-wrapper">
+                        <p class="promo-title" id="promo-banner-title">Special Offer: Free Silver Membership!</p>
+                        <p class="promo-desc" id="promo-banner-desc">Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.</p>
+                    </div>
+                </div>
+                <div class="promo-actions">
+                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" id="promo-upgrade-link" class="promo-btn-upgrade">Upgrade</a>
+                </div>
+            </div>
 
             <!-- Locked Overlay for Paywall/Survey -->
             <div id="chat-lock-overlay" class="lock-overlay">

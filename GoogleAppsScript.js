@@ -22,12 +22,16 @@ function doGet(e) {
     var usersSheet = ss.getSheetByName("Users");
     if (!usersSheet) {
       usersSheet = ss.insertSheet("Users");
-      usersSheet.appendRow(["Email", "Trial Start Date", "Access Status", "Last Payment Date"]);
-      usersSheet.getRange("A1:D1").setFontWeight("bold");
+      usersSheet.appendRow(["Email", "Trial Start Date", "Access Status", "Last Payment Date", "Name", "Phone", "Referrer", "First Reflection Completed", "Referral Days Added"]);
+      usersSheet.getRange("A1:I1").setFontWeight("bold");
     }
     
-    // Action 1: Check access status (Trial/Expired/Purchased)
+    // Action 1: Check access status or register user
     if (action === "checkAccess") {
+      var name = e.parameter.name || "";
+      var phone = e.parameter.phone || "";
+      var referrer = e.parameter.referrer || "";
+      
       var data = usersSheet.getDataRange().getValues();
       var userRowIndex = -1;
       
@@ -40,9 +44,18 @@ function doGet(e) {
       
       var today = new Date();
       
-      // If user is new, register a 7-day trial immediately
+      // If user is new:
       if (userRowIndex === -1) {
-        usersSheet.appendRow([email, today, "Trial", ""]);
+        // If Name and Phone are not provided, we return "register_required" status
+        if (!name || !phone) {
+          return ContentService.createTextOutput(JSON.stringify({
+            status: "register_required",
+            message: "User must register first"
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+        
+        // Register new user with 7-day trial
+        usersSheet.appendRow([email, today, "Trial", "", name, phone, referrer, "FALSE", 0]);
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: true,
@@ -53,6 +66,7 @@ function doGet(e) {
       var userRow = data[userRowIndex - 1];
       var trialStartDate = new Date(userRow[1]);
       var accessStatus = userRow[2].toString().trim();
+      var referralDaysAdded = parseInt(userRow[8] || 0, 10);
       
       if (accessStatus === "Purchased") {
         return ContentService.createTextOutput(JSON.stringify({
@@ -66,11 +80,14 @@ function doGet(e) {
       var timeDiff = Math.abs(today.getTime() - trialStartDate.getTime());
       var daysPassed = Math.floor(timeDiff / (1000 * 3600 * 24));
       
-      if (accessStatus === "Trial" && daysPassed < 7) {
+      // Total trial days = 7 + referralDaysAdded
+      var totalTrialDays = 7 + referralDaysAdded;
+      
+      if (accessStatus === "Trial" && daysPassed < totalTrialDays) {
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: true,
-          daysLeft: 7 - daysPassed
+          daysLeft: totalTrialDays - daysPassed
         })).setMimeType(ContentService.MimeType.JSON);
       } else {
         // Mark as Expired in sheet
@@ -85,24 +102,16 @@ function doGet(e) {
     
     // Action 2: Retrieve referrals (compounding referral system)
     if (action === "getReferrals") {
-      var sheet = ss.getActiveSheet();
-      var data = sheet.getDataRange().getValues();
-      
+      var data = usersSheet.getDataRange().getValues();
       var totalSuccessfulReferrals = 0;
-      var emailsCounted = {};
       
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        if (row.length < 13) continue;
+        var refEmail = (row[6] || "").toString().trim().toLowerCase();
+        var refCompleted = row[7];
         
-        var userEmail = (row[11] || "").toString().trim().toLowerCase();
-        var referrerEmail = (row[12] || "").toString().trim().toLowerCase();
-        
-        if (userEmail && referrerEmail === email) {
-          if (!emailsCounted[userEmail]) {
-            emailsCounted[userEmail] = true;
-            totalSuccessfulReferrals++;
-          }
+        if (refEmail === email && refCompleted === "TRUE") {
+          totalSuccessfulReferrals++;
         }
       }
       
@@ -131,8 +140,45 @@ function doPost(e) {
     var ss = SpreadsheetApp.openById(SHEET_ID);
     
     // Check if the POST is a TagMango payment webhook confirmation
-    if (data.event && data.event === "payment.successful" && data.data && data.data.email) {
-      var customerEmail = data.data.email.trim().toLowerCase();
+    if (data.event && (data.event === "payment.successful" || data.event === "order.created.completed")) {
+      var customerEmail = "";
+      if (data.data) {
+        if (typeof data.data === "string") {
+          try {
+            var nestedData = JSON.parse(data.data);
+            if (nestedData.email) customerEmail = nestedData.email;
+            else if (nestedData.user && nestedData.user.email) customerEmail = nestedData.user.email;
+          } catch(e) {}
+        } else {
+          if (data.data.email) {
+            customerEmail = data.data.email;
+          } else if (data.data.user && data.data.user.email) {
+            customerEmail = data.data.user.email;
+          } else if (data.data.customer && data.data.customer.email) {
+            customerEmail = data.data.customer.email;
+          } else if (data.data.order && data.data.order.email) {
+            customerEmail = data.data.order.email;
+          }
+        }
+      }
+      if (!customerEmail && data.email) {
+        customerEmail = data.email;
+      }
+      
+      if (!customerEmail) {
+        // Fallback: log the payload if we cannot find email
+        var logSheet = ss.getSheetByName("WebhookLogs");
+        if (!logSheet) {
+          logSheet = ss.insertSheet("WebhookLogs");
+          logSheet.appendRow(["Date", "Payload"]);
+        }
+        logSheet.appendRow([new Date(), rawContent]);
+        
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Email not found in payload" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      customerEmail = customerEmail.trim().toLowerCase();
       var usersSheet = ss.getSheetByName("Users");
       if (!usersSheet) {
         usersSheet = ss.insertSheet("Users");
@@ -207,6 +253,53 @@ function doPost(e) {
       (data.email || "").toString().trim().toLowerCase(),
       (data.referrerEmail || "").toString().trim().toLowerCase()
     ]);
+    
+    // Update referred status when first reflection completed
+    var usersSheet = ss.getSheetByName("Users");
+    var userEmail = (data.email || "").toString().trim().toLowerCase();
+    if (usersSheet && userEmail) {
+      var usersData = usersSheet.getDataRange().getValues();
+      var userRowIndex = -1;
+      for (var i = 1; i < usersData.length; i++) {
+        if (usersData[i][0].toString().trim().toLowerCase() === userEmail) {
+          userRowIndex = i + 1;
+          break;
+        }
+      }
+      if (userRowIndex > -1) {
+        var firstReflectionCompleted = usersData[userRowIndex - 1][7];
+        if (firstReflectionCompleted !== "TRUE" && firstReflectionCompleted !== true) {
+          // Set to TRUE
+          usersSheet.getRange(userRowIndex, 8).setValue("TRUE");
+          
+          // Check if they were referred by someone
+          var referrerEmail = (usersData[userRowIndex - 1][6] || "").toString().trim().toLowerCase();
+          if (referrerEmail && referrerEmail !== userEmail) {
+            // Count verified referrals for referrer
+            var referrerRowIndex = -1;
+            for (var j = 1; j < usersData.length; j++) {
+              if (usersData[j][0].toString().trim().toLowerCase() === referrerEmail) {
+                referrerRowIndex = j + 1;
+                break;
+              }
+            }
+            if (referrerRowIndex > -1) {
+              var verifiedCount = 0;
+              for (var k = 1; k < usersData.length; k++) {
+                var refEmail = (usersData[k][6] || "").toString().trim().toLowerCase();
+                var refCompleted = usersData[k][7];
+                if (refEmail === referrerEmail && refCompleted === "TRUE") {
+                  verifiedCount++;
+                }
+              }
+              // Calculate bonus days: 7 days for every 5 successful referrals
+              var bonusDays = Math.floor(verifiedCount / 5) * 7;
+              usersSheet.getRange(referrerRowIndex, 9).setValue(bonusDays);
+            }
+          }
+        }
+      }
+    }
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
       .setMimeType(ContentService.MimeType.JSON);

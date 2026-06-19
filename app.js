@@ -31,9 +31,8 @@ You speak to individuals. From the heart. One-on-one.
 - You must output your text responses in full, grammatically flawless, premium English only.
 - Never write or pre-populate words in Hindi or Hinglish text strings.
 
-3. THE MANDATORY OPENING FILTER:
-- Every single interaction, regardless of what the user types or speaks first, must open with this exact line to verify their status: "Are you new to Mirror Magic, or are you already part of our community?"
-- Do not provide coaching analysis until this is established.
+3. HANDSHAKE ESTABLISHED:
+- The user has already completed the initial handshake when starting the conversation. You do not need to ask if they are new or a community member, and you must start coaching directly. Do not repeat the handshake question.
 
 4. CORE CONSCIOUSNESS DIAGNOSTICS:
 - If the user communicates loops around wealth, career, or job setbacks, map and diagnose the block to one of 'The 5 Wealth Roots' (Mother, Father, Womb, Ancestral, Awareness).
@@ -770,6 +769,18 @@ document.addEventListener("DOMContentLoaded", () => {
     checkReferrerUrl();
     updateReferralUI();
     
+    // Hook up language select listener
+    const langSelect = document.getElementById("language-toggle");
+    if (langSelect) {
+        langSelect.addEventListener("change", (e) => {
+            changeLanguage(e.target.value);
+        });
+    }
+    
+    // Load default or saved language
+    const savedLang = localStorage.getItem("mirror_language") || "en";
+    changeLanguage(savedLang);
+
     // Fetch local static knowledge base
     fetch("knowledge.json")
         .then(res => res.json())
@@ -938,6 +949,7 @@ function setupEventListeners() {
         reflectionCount++;
         try {
             localStorage.setItem("reflection_count", reflectionCount.toString());
+            localStorage.setItem("last_reflection_date", new Date().toDateString());
         } catch(e) {}
 
         // Check trial and subscription access status
@@ -1754,12 +1766,310 @@ async function saveConversationToGoogleSheets() {
     }
 }
 
+// --- Translation System Dictionary & Logic ---
+const TRANSLATIONS = {
+    en: {
+        brand_title: "Mirror Magic Coach™",
+        brand_tagline: "Honey Vachhani Movement",
+        tab_mirror: "🪞 Mirror & Journal",
+        tab_coach: "💬 Honey Coach",
+        tab_guides: "📚 Teachings",
+        methodology_title: "The Methodology",
+        pillar_title: "The 3 Pillars of Mirror Magic",
+        secrets_title: "The 3 Secrets (The Method)",
+        vocab_title: "Vocabulary of Consciousness",
+        daily_practice_title: "✨ Daily Alignment Practice",
+        daily_prompt_default: 'Look deep into your eyes and ask: <em>"What is it that I am refusing to see about myself?"</em>',
+        btn_hear_voice: "🔊 Hear Voice Guidance",
+        btn_play_music: "🎵 Play Healing Music (528Hz)",
+        label_feel: "1. How did you feel looking in the mirror?",
+        label_think: "2. What did you think?",
+        label_body: "3. Where in your body did you feel it?",
+        textarea_feel_placeholder: "e.g. vulnerable, resistant, light...",
+        textarea_think_placeholder: "What thoughts came up?",
+        textarea_body_placeholder: "e.g. tightness in chest, warmth in heart...",
+        btn_save_reflection: "Save Reflection & Access Coach",
+        referral_title: "✨ Referral Program",
+        referral_intro: "<strong>Expand Your Lineage, Earn Premium Mirror Access.</strong> When one soul heals, it heals an entire lineage. For every 5 friends or family members who use your link below to step in front of the mirror and save their first reflection, our system will automatically add 7 free days of premium access to your account.",
+        referral_enter_email: "Enter your email to generate your custom lineage referral link:",
+        btn_register: "Register",
+        referral_link_label: "Your Unique Lineage Referral Link:",
+        btn_copy_link: "Copy Link",
+        referral_successful: "Successful Referrals:",
+        referral_premium_credited: "Premium Days Credited:",
+        referral_next_reward: "to next reward",
+        
+        onboard_title: "Welcome to Mirror Magic",
+        onboard_subtitle: "Step in front of the mirror, start your 7-day free trial, and access Honey's AI Coach.",
+        label_lang: "Choose Language / भाषा चुनें",
+        label_name: "Full Name",
+        label_email: "Email Address",
+        label_phone: "Phone Number (with WhatsApp)",
+        btn_start_trial: "Start Free Trial & Open App",
+        
+        promo_banner_title: "Special Offer: Free Silver Membership!",
+        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.",
+        promo_upgrade: "Upgrade",
+        
+        lock_expired_title: "Your Free Trial Has Expired",
+        lock_expired_desc: "To continue receiving personalized daily guidance and alignment reviews from Honey AI Coach, please subscribe to a membership plan.",
+        
+        lock_email_title: "Enter Email to Access Coach",
+        lock_email_desc: "Start your 7-day free trial or access your subscription to unlock personal guidance from Honey AI Coach.",
+        btn_activate: "Activate / Login",
+        
+        lock_daily_title: "Honey AI Coach Locked",
+        lock_daily_desc: "Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach."
+    },
+    hi: {
+        brand_title: "मिरर मैजिक कोच™",
+        brand_tagline: "हनी वच्छानी मूवमेंट",
+        tab_mirror: "🪞 मिरर और जर्नल",
+        tab_coach: "💬 हनी कोच",
+        tab_guides: "📚 शिक्षाएं",
+        methodology_title: "पद्धति",
+        pillar_title: "मिरर मैजिक के 3 स्तंभ",
+        secrets_title: "3 रहस्य (विधि)",
+        vocab_title: "चेतना की शब्दावली",
+        daily_practice_title: "✨ दैनिक संरेखण अभ्यास",
+        daily_prompt_default: 'अपनी आँखों में गहराई से देखें और पूछें: <em>"वह क्या है जिसे मैं अपने बारे में देखने से इनकार कर रहा हूँ?"</em>',
+        btn_hear_voice: "🔊 आवाज मार्गदर्शन सुनें",
+        btn_play_music: "🎵 हीलिंग संगीत बजाएं (528Hz)",
+        label_feel: "1. दर्पण में देखकर आपको कैसा लगा?",
+        label_think: "2. आपने क्या सोचा?",
+        label_body: "3. आपने इसे अपने शरीर में कहाँ महसूस किया?",
+        textarea_feel_placeholder: "उदा. संवेदनशील, प्रतिरोधी, हल्का...",
+        textarea_think_placeholder: "क्या विचार मन में आए?",
+        textarea_body_placeholder: "उदा. छाती में जकड़न, दिल में गर्माहट...",
+        btn_save_reflection: "प्रतिबिंब सहेजें और कोच तक पहुंचें",
+        referral_title: "✨ रेफरल कार्यक्रम",
+        referral_intro: "<strong>अपने वंश का विस्तार करें, प्रीमियम मिरर एक्सेस प्राप्त करें।</strong> जब एक आत्मा ठीक होती है, तो यह पूरे वंश को ठीक करती है। प्रत्येक 5 मित्रों या परिवार के सदस्यों के लिए जो दर्पण के सामने खड़े होने और अपना पहला प्रतिबिंब सहेजने के लिए नीचे दिए गए आपके लिंक का उपयोग करते हैं, हमारा सिस्टम स्वचालित रूप से आपके खाते में 7 मुफ्त प्रीमियम एक्सेस दिन जोड़ देगा।",
+        referral_enter_email: "अपना कस्टम रेफरल लिंक बनाने के लिए अपना ईमेल दर्ज करें:",
+        btn_register: "पंजीकरण करें",
+        referral_link_label: "आपका अनूठा रेफरल लिंक:",
+        btn_copy_link: "लिंक कॉपी करें",
+        referral_successful: "सफल रेफरल:",
+        referral_premium_credited: "प्रीमियम दिन श्रेय दिए गए:",
+        referral_next_reward: "अगले इनाम के लिए",
+        
+        onboard_title: "मिरर मैजिक में आपका स्वागत है",
+        onboard_subtitle: "दर्पण के सामने कदम रखें, अपना 7-दिवसीय निःशुल्क परीक्षण शुरू करें, और हनी के एआई कोच तक पहुंचें।",
+        label_lang: "Choose Language / भाषा चुनें",
+        label_name: "पूरा नाम",
+        label_email: "ईमेल पता",
+        label_phone: "फ़ोन नंबर (व्हाट्सएप के साथ)",
+        btn_start_trial: "निःशुल्क परीक्षण शुरू करें और ऐप खोलें",
+        
+        promo_banner_title: "विशेष प्रस्ताव: मुफ्त सिल्वर सदस्यता!",
+        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹1,59,000), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।",
+        promo_upgrade: "अपग्रेड करें",
+        
+        lock_expired_title: "आपका निःशुल्क परीक्षण समाप्त हो गया है",
+        lock_expired_desc: "हनी एआई कोच से व्यक्तिगत दैनिक मार्गदर्शन और संरेखण समीक्षाएं प्राप्त करना जारी रखने के लिए, कृपया सदस्यता योजना की सदस्यता लें।",
+        
+        lock_email_title: "कोच तक पहुँचने के लिए ईमेल दर्ज करें",
+        lock_email_desc: "हनी एआई कोच से व्यक्तिगत मार्गदर्शन अनलॉक करने के लिए अपना 7-दिवसीय निःशुल्क परीक्षण शुरू करें या अपनी सदस्यता तक पहुँचें।",
+        btn_activate: "सक्रिय करें / लॉगिन करें",
+        
+        lock_daily_title: "हनी एआई कोच लॉक है",
+        lock_daily_desc: "हनी एआई कोच से व्यक्तिगत मार्गदर्शन अनलॉक करने के लिए पहले मध्य फलक में अपना दैनिक संरेखण प्रतिबिंब पूरा करें और अपनी प्रविष्टि सहेजें।"
+    }
+};
+
+function changeLanguage(lang) {
+    localStorage.setItem("mirror_language", lang);
+    
+    // Sync the selects
+    const onboardLangSelect = document.getElementById("onboard-lang");
+    if (onboardLangSelect) onboardLangSelect.value = lang;
+    const headerLangSelect = document.getElementById("language-toggle");
+    if (headerLangSelect) headerLangSelect.value = lang;
+    
+    const t = TRANSLATIONS[lang];
+    if (!t) return;
+    
+    // Translate Onboarding Form
+    const onboardTitle = document.getElementById("onboard-title");
+    if (onboardTitle) onboardTitle.textContent = t.onboard_title;
+    const onboardSubtitle = document.getElementById("onboard-subtitle");
+    if (onboardSubtitle) onboardSubtitle.textContent = t.onboard_subtitle;
+    
+    const labelOnboardLang = document.getElementById("label-onboard-lang");
+    if (labelOnboardLang) labelOnboardLang.textContent = t.label_lang;
+    const labelOnboardName = document.getElementById("label-onboard-name");
+    if (labelOnboardName) labelOnboardName.textContent = t.label_name;
+    const labelOnboardEmail = document.getElementById("label-onboard-email");
+    if (labelOnboardEmail) labelOnboardEmail.textContent = t.label_email;
+    const labelOnboardPhone = document.getElementById("label-onboard-phone");
+    if (labelOnboardPhone) labelOnboardPhone.textContent = t.label_phone;
+    const btnOnboardSubmit = document.getElementById("btn-onboard-submit");
+    if (btnOnboardSubmit) btnOnboardSubmit.textContent = t.btn_start_trial;
+    
+    // Translate Headings & Brand
+    const brandTitles = document.querySelectorAll(".brand-text h1, aside h1");
+    brandTitles.forEach(el => el.textContent = t.brand_title);
+    const brandTaglines = document.querySelectorAll(".brand-tagline");
+    brandTaglines.forEach(el => el.textContent = t.brand_tagline);
+    
+    // Translate Mobile Navigation Tabs
+    const tabMirror = document.getElementById("tab-btn-mirror");
+    if (tabMirror) tabMirror.textContent = t.tab_mirror;
+    const tabCoach = document.getElementById("tab-btn-coach");
+    if (tabCoach) tabCoach.textContent = t.tab_coach;
+    const tabGuides = document.getElementById("tab-btn-guides");
+    if (tabGuides) tabGuides.textContent = t.tab_guides;
+    
+    // Translate Left Pane Methodology Heading
+    const methodologyTitleEl = document.querySelector("#guides-pane .section-title");
+    if (methodologyTitleEl) methodologyTitleEl.textContent = t.methodology_title;
+    
+    // Translate Center Pane Elements
+    const dailyPracticeTitle = document.querySelector("#daily-alignment-container .section-title");
+    if (dailyPracticeTitle) dailyPracticeTitle.textContent = t.daily_practice_title;
+    
+    const dailyPromptText = document.getElementById("alignment-prompt-text");
+    if (dailyPromptText) {
+        dailyPromptText.innerHTML = t.daily_prompt_default;
+    }
+    
+    const btnPlayPrompt = document.getElementById("btn-play-prompt");
+    if (btnPlayPrompt) btnPlayPrompt.innerHTML = `<span class="btn-icon">🔊</span> ${t.btn_hear_voice}`;
+    const btnPlayMusic = document.getElementById("btn-play-music");
+    if (btnPlayMusic) btnPlayMusic.innerHTML = `<span class="btn-icon">🎵</span> ${t.btn_play_music}`;
+    
+    // Form Inputs
+    const feelLabel = document.querySelector('label[for="journal-feel"]');
+    if (feelLabel) feelLabel.textContent = t.label_feel;
+    const journalFeel = document.getElementById("journal-feel");
+    if (journalFeel) journalFeel.placeholder = t.textarea_feel_placeholder;
+    
+    const thinkLabel = document.querySelector('label[for="journal-think"]');
+    if (thinkLabel) thinkLabel.textContent = t.label_think;
+    const journalThink = document.getElementById("journal-think");
+    if (journalThink) journalThink.placeholder = t.textarea_think_placeholder;
+    
+    const bodyLabel = document.querySelector('label[for="journal-body"]');
+    if (bodyLabel) bodyLabel.textContent = t.label_body;
+    const journalBody = document.getElementById("journal-body");
+    if (journalBody) journalBody.placeholder = t.textarea_body_placeholder;
+    
+    const btnSaveJournal = document.getElementById("btn-save-journal");
+    if (btnSaveJournal) btnSaveJournal.textContent = t.btn_save_reflection;
+    
+    // Translate Referral Program
+    const referralTitle = document.querySelector("#referral-dashboard-container .section-title");
+    if (referralTitle) referralTitle.textContent = t.referral_title;
+    const referralIntro = document.querySelector("#referral-dashboard-container .referral-box-content p");
+    if (referralIntro) referralIntro.innerHTML = t.referral_intro;
+    const referralEnterEmail = document.querySelector("#referral-register-form p");
+    if (referralEnterEmail) referralEnterEmail.textContent = t.referral_enter_email;
+    const btnReferralRegister = document.getElementById("btn-referral-register");
+    if (btnReferralRegister) btnReferralRegister.textContent = t.btn_register;
+    const referralLinkLabel = document.querySelector("#referral-info-display span");
+    if (referralLinkLabel) referralLinkLabel.textContent = t.referral_link_label;
+    const btnCopyLink = document.querySelector("#referral-info-display button");
+    if (btnCopyLink) btnCopyLink.textContent = t.btn_copy_link;
+    
+    // Translate Promo Banner
+    const promoBannerTitle = document.getElementById("promo-banner-title");
+    if (promoBannerTitle) promoBannerTitle.textContent = t.promo_banner_title;
+    const promoBannerDesc = document.getElementById("promo-banner-desc");
+    if (promoBannerDesc) promoBannerDesc.textContent = t.promo_banner_desc;
+    const promoUpgrade = document.getElementById("promo-upgrade-link");
+    if (promoUpgrade) promoUpgrade.textContent = t.promo_upgrade;
+    
+    // Update active overlays to reflect new language
+    updateLockState();
+}
+
+// --- Dynamic Promo Banner Toggle ---
+function showPromoBanner(daysLeft) {
+    const promoBanner = document.getElementById("promo-banner");
+    if (!promoBanner) return;
+    
+    if (daysLeft >= 1 && daysLeft <= 3) {
+        promoBanner.classList.remove("hidden");
+        const bannerDesc = document.getElementById("promo-banner-desc");
+        const lang = localStorage.getItem("mirror_language") || "en";
+        
+        if (lang === "hi") {
+            bannerDesc.textContent = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹1,59,000), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।`;
+        } else {
+            bannerDesc.textContent = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.`;
+        }
+    } else {
+        promoBanner.classList.add("hidden");
+    }
+}
+
+// --- Onboarding Form Submission ---
+async function submitOnboardingForm(e) {
+    if (e) e.preventDefault();
+    
+    const nameVal = document.getElementById("onboard-name").value.trim();
+    const emailVal = document.getElementById("onboard-email").value.trim().toLowerCase();
+    const phoneVal = document.getElementById("onboard-phone").value.trim();
+    const langVal = document.getElementById("onboard-lang").value;
+    
+    if (!nameVal || !emailVal || !phoneVal) {
+        alert("Please fill out all fields.");
+        return;
+    }
+    
+    const referrerEmail = localStorage.getItem("mirror_referrer_email") || "";
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        alert("System error: Google Apps Script Webhook URL is not configured yet.");
+        return;
+    }
+    
+    const submitBtn = document.getElementById("btn-onboard-submit");
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "Registering...";
+    submitBtn.disabled = true;
+    
+    try {
+        const fetchUrl = `${scriptUrl}?action=checkAccess&email=${encodeURIComponent(emailVal)}&name=${encodeURIComponent(nameVal)}&phone=${encodeURIComponent(phoneVal)}&referrer=${encodeURIComponent(referrerEmail)}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        
+        if (data && (data.status === "active" || data.status === "success")) {
+            localStorage.setItem("mirror_user_email", emailVal);
+            localStorage.setItem("mirror_user_name", nameVal);
+            localStorage.setItem("mirror_user_phone", phoneVal);
+            
+            // Sync with referral email input if present
+            const refEmailInput = document.getElementById("referral-email-input");
+            if (refEmailInput) refEmailInput.value = emailVal;
+            
+            // Hide onboarding modal
+            const onboardModal = document.getElementById("onboarding-modal");
+            if (onboardModal) onboardModal.classList.add("hidden");
+            
+            isAccessLocked = false;
+            await checkAccessStatus();
+            await updateReferralUI();
+        } else {
+            alert("Registration failed. Please check details and try again.");
+        }
+    } catch(err) {
+        console.error("Onboarding submission failed:", err);
+        alert("Failed to connect to registration server. Please try again.");
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
 // --- Subscription & Lock State Functions ---
 function updateLockState() {
     const lockOverlay = document.getElementById("chat-lock-overlay");
     if (!lockOverlay) return;
     
     const userEmail = localStorage.getItem("mirror_user_email");
+    const lang = localStorage.getItem("mirror_language") || "en";
+    const t = TRANSLATIONS[lang];
     
     // 1. If email is not set, force registration
     if (!userEmail) {
@@ -1767,11 +2077,11 @@ function updateLockState() {
         lockOverlay.innerHTML = `
             <div class="lock-card glass-panel" style="max-width: 400px; padding: 30px; text-align: center;">
                 <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔒</span>
-                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">Enter Email to Access Coach</h3>
-                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-text-secondary); line-height: 1.4;">Start your 7-day free trial or access your subscription to unlock personal guidance from Honey AI Coach.</p>
+                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">${t.lock_email_title}</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-text-secondary); line-height: 1.4;">${t.lock_email_desc}</p>
                 <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
                     <input type="email" id="lock-email-input" placeholder="Enter your email..." style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--color-border-glass); background: #ffffff; color: #1C1C1E; font-size: 0.95rem; text-align: center; outline: none; width: 100%; box-sizing: border-box;">
-                    <button class="btn btn-primary btn-block" onclick="submitLockEmail()" style="padding: 12px; font-weight: 600;">Activate / Login</button>
+                    <button class="btn btn-primary btn-block" onclick="submitLockEmail()" style="padding: 12px; font-weight: 600;">${t.btn_activate}</button>
                 </div>
             </div>
         `;
@@ -1781,15 +2091,75 @@ function updateLockState() {
     // 2. If email is set and access is expired/locked
     if (isAccessLocked) {
         lockOverlay.classList.remove("hidden");
+        
+        let recommendedLabel = lang === "hi" ? "अनुशंसित" : "Recommended";
+        let silverFreeLabel = lang === "hi" ? "मुफ्त सिल्वर सदस्यता!" : "Includes FREE Silver Membership!";
+        let silverWorthLabel = lang === "hi" ? "सिल्वर सदस्यता + लाइव कोचिंग" : "Silver Membership + Live Coaching";
+        let annualPlanBtnText = lang === "hi" ? "वार्षिक चुनें" : "Choose Annual";
+        let planBtnText = lang === "hi" ? "सदस्यता लें" : "Subscribe";
+        
         lockOverlay.innerHTML = `
-            <div class="lock-card glass-panel" style="max-width: 420px; padding: 30px; text-align: center; background-color: #fffbf2; border: 2px solid var(--color-primary); box-shadow: 0 10px 30px rgba(183, 140, 45, 0.15);">
-                <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔒</span>
-                <h3 style="margin-bottom: 10px; color: #1C1C1E; font-family: var(--font-heading);">Your Free Trial Has Expired</h3>
-                <p style="font-size: 0.92rem; margin-bottom: 25px; color: #1C1C1E; line-height: 1.5;">To continue receiving personalized daily guidance and alignment reviews from Honey AI Coach, please subscribe to a membership plan.</p>
-                <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
-                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="btn btn-primary" style="padding: 12px; text-decoration: none; text-align: center; display: block; font-weight: 600; box-sizing: border-box; width: 100%;">Subscribe (₹999/month)</a>
-                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="btn btn-secondary" style="padding: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500; box-sizing: border-box; width: 100%;">Silver Membership (₹9,999/year)</a>
+            <div class="lock-card glass-panel" style="max-width: 900px; width: 90%; padding: 35px 25px; text-align: center; background-color: #fffbf2; border: 2px solid var(--color-primary); box-shadow: 0 10px 40px rgba(183, 140, 45, 0.2);">
+                <span class="lock-icon" style="font-size: 2.8rem; display: block; margin-bottom: 12px; animation: gentle-pulse 2s infinite alternate;">🔒</span>
+                <h3 style="margin-bottom: 8px; color: #1C1C1E; font-family: var(--font-heading); font-size: 1.6rem;">${t.lock_expired_title}</h3>
+                <p style="font-size: 0.95rem; margin-bottom: 25px; color: #3e3e42; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">${t.lock_expired_desc}</p>
+                
+                <div class="pricing-grid">
+                    <!-- Monthly Plan -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-title">Monthly</div>
+                        <div class="pricing-card-price">₹999</div>
+                        <div class="pricing-card-period">per month</div>
+                        <div class="pricing-card-features">
+                            Daily Mirror Magic Coach Access<br>
+                            Somatic Alignment Logs
+                        </div>
+                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                    </div>
+                    
+                    <!-- Quarterly Plan -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-title">Quarterly</div>
+                        <div class="pricing-card-price">₹2,499</div>
+                        <div class="pricing-card-period">for 3 months (~₹833/mo)</div>
+                        <div class="pricing-card-features">
+                            Save ₹500 vs Monthly<br>
+                            Daily Coach Guidance
+                        </div>
+                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                    </div>
+                    
+                    <!-- Half-Yearly Plan -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-title">Half-Yearly</div>
+                        <div class="pricing-card-price">₹4,499</div>
+                        <div class="pricing-card-period">for 6 months (~₹750/mo)</div>
+                        <div class="pricing-card-features">
+                            Save ₹1,500 vs Monthly<br>
+                            Continuous Cleansing Anchor
+                        </div>
+                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                    </div>
+                    
+                    <!-- Annual Plan (Recommended) -->
+                    <div class="pricing-card recommended">
+                        <span class="pricing-badge">${recommendedLabel}</span>
+                        <div class="pricing-card-title">Annual</div>
+                        <div class="pricing-card-price" style="font-size: 1.8rem; margin-top: 5px;">₹7,777</div>
+                        <div class="pricing-card-period">per year (~₹648/mo)</div>
+                        <div class="pricing-card-features" style="font-weight: 500;">
+                            <strong>${silverFreeLabel}</strong><br>
+                            ${silverWorthLabel}<br>
+                            Monday Live Group Coaching<br>
+                            Blessathons & More!
+                        </div>
+                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
+                    </div>
                 </div>
+                
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 15px; text-align: center;">
+                    Payments processed securely via TagMango. Your access is instantly unlocked upon completion.
+                </p>
             </div>
         `;
         return;
@@ -1797,15 +2167,15 @@ function updateLockState() {
     
     // 3. Otherwise check standard daily alignment block
     const isCommunityMember = ["silver", "gold", "diamond", "platinum"].includes(currentClientTier);
-    const reflectionSaved = reflectionCount > 0;
+    const reflectionSaved = localStorage.getItem("last_reflection_date") === new Date().toDateString();
     
     if (!isSubscribed && !isCommunityMember && !reflectionSaved) {
         lockOverlay.classList.remove("hidden");
         lockOverlay.innerHTML = `
             <div class="lock-card glass-panel">
                 <span class="lock-icon">🔒</span>
-                <h3>Honey AI Coach Locked</h3>
-                <p>Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach.</p>
+                <h3>${t.lock_daily_title}</h3>
+                <p>${t.lock_daily_desc}</p>
             </div>
         `;
     } else {
@@ -1816,10 +2186,19 @@ function updateLockState() {
 // 4. Trial & Subscription Checks
 async function checkAccessStatus() {
     const email = localStorage.getItem("mirror_user_email");
+    const onboardModal = document.getElementById("onboarding-modal");
+    
     if (!email) {
+        if (onboardModal) {
+            onboardModal.classList.remove("hidden");
+        }
         isAccessLocked = true;
         updateLockState();
         return;
+    }
+    
+    if (onboardModal) {
+        onboardModal.classList.add("hidden");
     }
     
     const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
@@ -1833,11 +2212,22 @@ async function checkAccessStatus() {
         const data = await res.json();
         
         if (data) {
-            if (data.status === "locked") {
+            if (data.status === "register_required") {
+                if (onboardModal) onboardModal.classList.remove("hidden");
                 isAccessLocked = true;
+            } else if (data.status === "locked") {
+                isAccessLocked = true;
+                isSubscribed = false;
+                showPromoBanner(0);
             } else if (data.status === "active") {
                 isAccessLocked = false;
-                isSubscribed = true; // Auto-unlock the paywall
+                if (data.isTrial) {
+                    isSubscribed = false;
+                    showPromoBanner(data.daysLeft);
+                } else {
+                    isSubscribed = true;
+                    showPromoBanner(0);
+                }
             }
             updateLockState();
         }
@@ -2209,6 +2599,8 @@ window.updateReferralUI = updateReferralUI;
 window.checkReferrerUrl = checkReferrerUrl;
 window.submitLockEmail = submitLockEmail;
 window.checkAccessStatus = checkAccessStatus;
+window.changeLanguage = changeLanguage;
+window.submitOnboardingForm = submitOnboardingForm;
 
 
 
