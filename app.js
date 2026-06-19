@@ -748,6 +748,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (nameParam) userName = decodeURIComponent(nameParam);
         console.log("Subscription status set to true via Tagmango success redirect.");
     }
+    
+    // Load stored user name from onboarding registration
+    const storedName = localStorage.getItem("mirror_user_name");
+    if (storedName) {
+        userName = storedName;
+    }
 
     // Attempt to retrieve reflectionCount from localStorage to persist user progress
     try {
@@ -975,9 +981,6 @@ function setupEventListeners() {
             addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
             switchMobileTab("coach");
             userInputField.focus();
-            
-            // Post log automatically to sheet
-            saveConversationToGoogleSheets();
         }
     });
 }
@@ -2038,6 +2041,7 @@ async function submitOnboardingForm(e) {
             localStorage.setItem("mirror_user_email", emailVal);
             localStorage.setItem("mirror_user_name", nameVal);
             localStorage.setItem("mirror_user_phone", phoneVal);
+            userName = nameVal;
             
             // Sync with referral email input if present
             const refEmailInput = document.getElementById("referral-email-input");
@@ -2212,6 +2216,13 @@ async function checkAccessStatus() {
         const data = await res.json();
         
         if (data) {
+            if (data.tier) {
+                let tierKey = data.tier.toLowerCase();
+                if (tierKey === "trial" || tierKey === "expired" || tierKey === "purchased") {
+                    tierKey = "new";
+                }
+                setClientTier(tierKey);
+            }
             if (data.status === "register_required") {
                 if (onboardModal) onboardModal.classList.remove("hidden");
                 isAccessLocked = true;
