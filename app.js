@@ -731,6 +731,7 @@ let knowledgeDatabase = [];
 
 // Monetization & Audio States
 let isSubscribed = false;
+let isAccessLocked = false;
 let selectedPlan = "month";
 let isAudioPlaying = false;
 let reflectionCount = 0; // Tracks alignment reflection saves to delay pricing modal
@@ -761,7 +762,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initChatFlow();
     setupEventListeners();
-    updateLockState();
+    
+    // Check trial and subscription access status
+    checkAccessStatus();
     
     // Check and update referral status
     checkReferrerUrl();
@@ -921,7 +924,7 @@ function setupEventListeners() {
     });
 
     // Save Journal click handler
-    btnSaveJournal.addEventListener("click", () => {
+    btnSaveJournal.addEventListener("click", async () => {
         const feelVal = document.getElementById("journal-feel").value.trim();
         const thinkVal = document.getElementById("journal-think").value.trim();
         const bodyVal = document.getElementById("journal-body").value.trim();
@@ -937,6 +940,9 @@ function setupEventListeners() {
             localStorage.setItem("reflection_count", reflectionCount.toString());
         } catch(e) {}
 
+        // Check trial and subscription access status
+        await checkAccessStatus();
+
         // Clear reflection fields for next session
         document.getElementById("journal-feel").value = "";
         document.getElementById("journal-think").value = "";
@@ -949,8 +955,10 @@ function setupEventListeners() {
         if (reflectionCount >= 4) {
             showSubscriptionModal();
         } else {
-            // Free alignment path: instantly unlock coach and guide client to coach tab
-            isSubscribed = true;
+            // Free alignment path: instantly unlock coach if access is not locked
+            if (!isAccessLocked) {
+                isSubscribed = true;
+            }
             updateLockState();
             addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
             switchMobileTab("coach");
@@ -1748,14 +1756,115 @@ async function saveConversationToGoogleSheets() {
 
 // --- Subscription & Lock State Functions ---
 function updateLockState() {
-    const isCommunityMember = ["silver", "gold", "diamond", "platinum"].includes(currentClientTier);
+    const lockOverlay = document.getElementById("chat-lock-overlay");
+    if (!lockOverlay) return;
     
-    // Allow leads to message the coach 3 times before locking the chat for feedback/payment suggestions
-    if (!isFirstHandshake && !isSubscribed && !isCommunityMember && exchangeCount >= 3) {
-        chatLockOverlay.classList.remove("hidden");
-    } else {
-        chatLockOverlay.classList.add("hidden");
+    const userEmail = localStorage.getItem("mirror_user_email");
+    
+    // 1. If email is not set, force registration
+    if (!userEmail) {
+        lockOverlay.classList.remove("hidden");
+        lockOverlay.innerHTML = `
+            <div class="lock-card glass-panel" style="max-width: 400px; padding: 30px; text-align: center;">
+                <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔒</span>
+                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">Enter Email to Access Coach</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-text-secondary); line-height: 1.4;">Start your 7-day free trial or access your subscription to unlock personal guidance from Honey AI Coach.</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+                    <input type="email" id="lock-email-input" placeholder="Enter your email..." style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--color-border-glass); background: #ffffff; color: #1C1C1E; font-size: 0.95rem; text-align: center; outline: none; width: 100%; box-sizing: border-box;">
+                    <button class="btn btn-primary btn-block" onclick="submitLockEmail()" style="padding: 12px; font-weight: 600;">Activate / Login</button>
+                </div>
+            </div>
+        `;
+        return;
     }
+    
+    // 2. If email is set and access is expired/locked
+    if (isAccessLocked) {
+        lockOverlay.classList.remove("hidden");
+        lockOverlay.innerHTML = `
+            <div class="lock-card glass-panel" style="max-width: 420px; padding: 30px; text-align: center; background-color: #fffbf2; border: 2px solid var(--color-primary); box-shadow: 0 10px 30px rgba(183, 140, 45, 0.15);">
+                <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔒</span>
+                <h3 style="margin-bottom: 10px; color: #1C1C1E; font-family: var(--font-heading);">Your Free Trial Has Expired</h3>
+                <p style="font-size: 0.92rem; margin-bottom: 25px; color: #1C1C1E; line-height: 1.5;">To continue receiving personalized daily guidance and alignment reviews from Honey AI Coach, please subscribe to a membership plan.</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="btn btn-primary" style="padding: 12px; text-decoration: none; text-align: center; display: block; font-weight: 600; box-sizing: border-box; width: 100%;">Subscribe (₹999/month)</a>
+                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="btn btn-secondary" style="padding: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500; box-sizing: border-box; width: 100%;">Silver Membership (₹9,999/year)</a>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // 3. Otherwise check standard daily alignment block
+    const isCommunityMember = ["silver", "gold", "diamond", "platinum"].includes(currentClientTier);
+    const reflectionSaved = reflectionCount > 0;
+    
+    if (!isSubscribed && !isCommunityMember && !reflectionSaved) {
+        lockOverlay.classList.remove("hidden");
+        lockOverlay.innerHTML = `
+            <div class="lock-card glass-panel">
+                <span class="lock-icon">🔒</span>
+                <h3>Honey AI Coach Locked</h3>
+                <p>Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach.</p>
+            </div>
+        `;
+    } else {
+        lockOverlay.classList.add("hidden");
+    }
+}
+
+// 4. Trial & Subscription Checks
+async function checkAccessStatus() {
+    const email = localStorage.getItem("mirror_user_email");
+    if (!email) {
+        isAccessLocked = true;
+        updateLockState();
+        return;
+    }
+    
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        return;
+    }
+    
+    try {
+        const fetchUrl = `${scriptUrl}?action=checkAccess&email=${encodeURIComponent(email)}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        
+        if (data) {
+            if (data.status === "locked") {
+                isAccessLocked = true;
+            } else if (data.status === "active") {
+                isAccessLocked = false;
+                isSubscribed = true; // Auto-unlock the paywall
+            }
+            updateLockState();
+        }
+    } catch (e) {
+        console.warn("Failed to check access status from Google Sheets:", e);
+    }
+}
+
+async function submitLockEmail() {
+    const emailInput = document.getElementById("lock-email-input");
+    if (!emailInput) return;
+    
+    const emailVal = emailInput.value.trim().toLowerCase();
+    
+    if (!emailVal || !emailVal.includes("@") || !emailVal.includes(".")) {
+        alert("Please enter a valid email address.");
+        return;
+    }
+    
+    localStorage.setItem("mirror_user_email", emailVal);
+    
+    // Sync with referral input if present
+    const refEmailInput = document.getElementById("referral-email-input");
+    if (refEmailInput) refEmailInput.value = emailVal;
+    
+    await checkAccessStatus();
+    await updateReferralUI();
 }
 
 function showSubscriptionModal() {
@@ -2098,6 +2207,8 @@ window.registerUserReferral = registerUserReferral;
 window.copyReferralLink = copyReferralLink;
 window.updateReferralUI = updateReferralUI;
 window.checkReferrerUrl = checkReferrerUrl;
+window.submitLockEmail = submitLockEmail;
+window.checkAccessStatus = checkAccessStatus;
 
 
 
