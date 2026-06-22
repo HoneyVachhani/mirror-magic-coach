@@ -2561,12 +2561,8 @@ function toggleSpeechToText(targetFieldId, micButtonId) {
     recognition.onresult = (event) => {
         const transcriptText = event.results[0][0].transcript;
         
-        // Append voice-to-text input to the current value of the textarea
-        if (targetField.value.trim()) {
-            targetField.value = targetField.value.trim() + " " + transcriptText;
-        } else {
-            targetField.value = transcriptText;
-        }
+        // Clean and overwrite with fresh voice input instead of appending to avoid repeating duplicates
+        targetField.value = transcriptText;
         
         // Trigger input event to update autosize properties if any
         targetField.dispatchEvent(new Event('input', { bubbles: true }));
