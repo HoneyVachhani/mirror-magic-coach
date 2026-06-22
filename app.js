@@ -708,7 +708,7 @@ const subscriptionModal = document.getElementById("subscription-modal");
 const chatLockOverlay = document.getElementById("chat-lock-overlay");
 
 // --- App State & Configuration ---
-const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxqePoGo9IjIy-cgkaiXGvPLQsJwMWeYLIdXiUOSGpPBMFmKpxXKXV9_wO0wtVdZoXgpQ/exec"; // Deployed Web App URL
+const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby4FKWwC9vc8YR1SJEMWMCyJZBR4-huVlemfcGOJ9d7D34HHUqE5rsmACrOeWaazz8M/exec"; // Deployed Web App URL
 
 // Tagmango Product Checkout Links (Replace with your live Tagmango URLs)
 const TAGMANGO_WEEKLY_URL = "https://tagmango.com/buy/weekly-subscription-placeholder";
@@ -723,6 +723,34 @@ let conversationHistory = []; // Standard format: [{ role: 'user'|'model', parts
 let userName = "";
 let isOnboardingNamePrompt = false;
 let exchangeCount = 0;
+let isTrialUser = false;
+let currentTrialDaysLeft = null;
+let didOfferAppear = "No";
+let userOfferResponse = "No Offer Shown";
+let isOfferIntroduced = false;
+let offerStatus = "none"; // "none", "pending", "accepted", "declined"
+
+function getISTTimestamp() {
+    const options = {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    const formatter = new Intl.DateTimeFormat('en-GB', options);
+    const parts = formatter.formatToParts(new Date());
+    const day = parts.find(p => p.type === 'day').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const year = parts.find(p => p.type === 'year').value;
+    const hour = parts.find(p => p.type === 'hour').value;
+    const minute = parts.find(p => p.type === 'minute').value;
+    const second = parts.find(p => p.type === 'second').value;
+    return `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+}
 let isConversationClosed = false;
 let pendingGreetingText = "";
 let clientTrafficSource = "";
@@ -747,6 +775,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const nameParam = urlParams.get("name");
         if (nameParam) userName = decodeURIComponent(nameParam);
         console.log("Subscription status set to true via Tagmango success redirect.");
+    }
+    
+    // Check for email & status=registered paid subscriber URL parameters
+    const emailParam = urlParams.get("email");
+    const statusParam = urlParams.get("status");
+    if (emailParam && statusParam === "registered") {
+        const cleanEmail = emailParam.trim().toLowerCase();
+        localStorage.setItem("mirror_user_email", cleanEmail);
+        isSubscribed = true;
+        isAccessLocked = false;
+        const onboardModal = document.getElementById("onboarding-modal");
+        if (onboardModal) onboardModal.classList.add("hidden");
+        console.log(`Paid subscriber recognized via URL parameter: ${cleanEmail}`);
     }
     
     // Load stored user name from onboarding registration
@@ -797,6 +838,9 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(err => {
             console.warn("No local static RAG knowledge database found or compiled yet:", err);
         });
+
+    // Run Sacred Space screen check once per day
+    checkSacredSpaceDailyScreen();
 });
 
 // --- Camera / Mirror Viewport Logic ---
@@ -861,6 +905,15 @@ function setupEventListeners() {
             setClientTier(newTier);
         }
     });
+
+    // Promo banner upgrade link listener
+    const promoUpgradeLink = document.getElementById("promo-upgrade-link");
+    if (promoUpgradeLink) {
+        promoUpgradeLink.addEventListener("click", () => {
+            userOfferResponse = "Interested";
+            console.log("User clicked offer: Interested");
+        });
+    }
 
     // Message submit
     chatForm.addEventListener("submit", (e) => {
@@ -940,6 +993,23 @@ function setupEventListeners() {
         btnPlayPrompt.innerHTML = '<span class="btn-icon">🔊</span> Hear Voice Guidance';
     });
 
+    // Auto-save conversation to sheet on page leave/hide/visibility change if minimum 6 exchanges occurred
+    window.addEventListener("beforeunload", () => {
+        if (exchangeCount >= 6) {
+            saveConversationToGoogleSheets();
+        }
+    });
+    window.addEventListener("pagehide", () => {
+        if (exchangeCount >= 6) {
+            saveConversationToGoogleSheets();
+        }
+    });
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden" && exchangeCount >= 6) {
+            saveConversationToGoogleSheets();
+        }
+    });
+
     // Save Journal click handler
     btnSaveJournal.addEventListener("click", async () => {
         const feelVal = document.getElementById("journal-feel").value.trim();
@@ -961,6 +1031,9 @@ function setupEventListeners() {
         // Check trial and subscription access status
         await checkAccessStatus();
 
+        // Update referral UI immediately to reflect the first completed session / trigger visibility
+        await updateReferralUI();
+
         // Clear reflection fields for next session
         document.getElementById("journal-feel").value = "";
         document.getElementById("journal-think").value = "";
@@ -969,19 +1042,14 @@ function setupEventListeners() {
         // Log the reflection event inside the current chat timeline
         addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
 
-        // Check if reflectionCount is greater than or equal to 4 to show the pricing survey modal
-        if (reflectionCount >= 4) {
-            showSubscriptionModal();
-        } else {
-            // Free alignment path: instantly unlock coach if access is not locked
-            if (!isAccessLocked) {
-                isSubscribed = true;
-            }
-            updateLockState();
-            addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
-            switchMobileTab("coach");
-            userInputField.focus();
+        // Free alignment path: instantly unlock coach if access is not locked
+        if (!isAccessLocked) {
+            isSubscribed = true;
         }
+        updateLockState();
+        addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
+        switchMobileTab("coach");
+        userInputField.focus();
     });
 }
 
@@ -1275,6 +1343,26 @@ function handleUserMessageSubmit() {
         return;
     }
     
+    // If offer is pending, intercept message text response
+    if (offerStatus === "pending") {
+        addUserMessage(text);
+        conversationHistory.push({
+            role: "user",
+            parts: [{ text: text }]
+        });
+        
+        const userTextClean = text.toLowerCase();
+        const positiveKeywords = ["yes", "sure", "ok", "tell me", "more", "interested", "yeah", "yep", "want to know", "want to hear"];
+        const isPositive = positiveKeywords.some(keyword => userTextClean.includes(keyword));
+        
+        if (isPositive) {
+            handleOfferResponse("yes");
+        } else {
+            handleOfferResponse("no");
+        }
+        return;
+    }
+    
     addUserMessage(text);
     
     // Add to chat history
@@ -1307,35 +1395,34 @@ async function queryHoneyAgent() {
     showTypingIndicator();
     
     try {
-        // Auto-save and close after 20 exchanges
-        if (exchangeCount >= 20) {
-            hideTypingIndicator();
-            const closingText = "Our session has reached its natural completion for today to let your reflections settle. Go gently. The mirror is always here when you need it.";
-            addCoachMessage(closingText, []);
-            isConversationClosed = true;
+        // Auto-save session details in background but keep conversation open indefinitely (min 6 exchanges required to trigger pageunload save)
+        if (exchangeCount >= 6) {
             saveConversationToGoogleSheets();
-            return;
         }
 
-        // Exchange closure check: Offer closure after minimum 10 exchanges AND when last message shows resolution, not a question
-        if (exchangeCount >= 10) {
-            const lastMsg = conversationHistory[conversationHistory.length - 1];
-            const lastUserText = (lastMsg && lastMsg.role === "user" && lastMsg.parts && lastMsg.parts[0]) ? lastMsg.parts[0].text : "";
-            
-            if (!isQuestion(lastUserText) && isResolution(lastUserText)) {
-                const closureText = `You have arrived somewhere real today.
-Take a breath. Look into your own eyes and let what just shifted — settle.
-Is there anything else you want to bring to the mirror today — or are you ready to carry this into your life?`;
+        // Intercept for Day 5 in-conversation Offer insertion on exchange 4
+        const dayNum = currentTrialDaysLeft !== null ? (8 - currentTrialDaysLeft) : 0;
+        if (isTrialUser && dayNum === 5 && exchangeCount === 4 && !isOfferIntroduced) {
+            isOfferIntroduced = true;
+            didOfferAppear = "Yes";
+            offerStatus = "pending";
+            userOfferResponse = "Not Interested"; // default until they say yes
+
+            setTimeout(() => {
+                hideTypingIndicator();
+                const offerText = "It sounds like this work is opening something real in you. There is a way to continue this every day — and it comes with everything inside Mirror Magic Movement included at no extra cost. Would you like to know more?";
+                addCoachMessage(offerText, [
+                    { label: "Yes, tell me more", action: () => handleOfferResponse("yes") },
+                    { label: "No, let's continue coaching", action: () => handleOfferResponse("no") }
+                ]);
                 
-                setTimeout(() => {
-                    hideTypingIndicator();
-                    addCoachMessage(closureText, [
-                        { label: "Bring something else to the mirror", action: () => selectClosureChoice("continue") },
-                        { label: "Ready to carry this into my life", action: () => selectClosureChoice("done") }
-                    ]);
-                }, 1000);
-                return;
-            }
+                // Add to conversation history
+                conversationHistory.push({
+                    role: "model",
+                    parts: [{ text: offerText }]
+                });
+            }, 1000);
+            return;
         }
 
         // Intercept specific scenarios with exact responses as requested
@@ -1736,20 +1823,33 @@ async function saveConversationToGoogleSheets() {
         const userEmail = localStorage.getItem("mirror_user_email") || "";
         const referrerEmail = localStorage.getItem("mirror_referrer_email") || "";
 
+        const tierMap = {
+            "detect": "Fresh Lead",
+            "new": "Fresh Lead",
+            "silver": "Silver",
+            "gold": "Gold",
+            "diamond": "Diamond",
+            "platinum": "Platinum"
+        };
+        const membershipVoice = tierMap[currentClientTier] || "Fresh Lead";
+
+        let trialDayStr = "Not in Trial";
+        if (isTrialUser && currentTrialDaysLeft !== null) {
+            const dayNum = 8 - currentTrialDaysLeft;
+            trialDayStr = `Day ${Math.max(1, Math.min(7, dayNum))}`;
+        }
+
         const payload = {
-            date: dateStr,
-            time: timeStr,
-            name: userName || "Anonymous",
-            membershipLevel: currentClientTier || "new",
-            howFoundUs: clientTrafficSource || "Direct / Community Member",
-            transcript: transcript,
-            keyEmotions: summary.keyEmotions,
-            keyTopics: summary.keyTopics,
-            programsRecommended: summary.programsRecommended,
-            outcome: summary.outcome,
-            suggestedPrice: surveyPriceResponse || "",
+            timestampIST: getISTTimestamp(),
+            name: userName || localStorage.getItem("mirror_user_name") || "Anonymous",
             email: userEmail,
-            referrerEmail: referrerEmail
+            whatsapp: localStorage.getItem("mirror_user_phone") || "",
+            membershipVoice: membershipVoice,
+            totalExchanges: exchangeCount,
+            trialDay: trialDayStr,
+            didOfferAppear: didOfferAppear,
+            offerResponse: userOfferResponse,
+            transcript: transcript
         };
         
         console.log("Sending conversation log to Google Sheets...", payload);
@@ -1757,6 +1857,7 @@ async function saveConversationToGoogleSheets() {
         await fetch(scriptUrl, {
             method: "POST",
             mode: "no-cors",
+            keepalive: true,
             headers: {
                 "Content-Type": "text/plain"
             },
@@ -1793,7 +1894,7 @@ const TRANSLATIONS = {
         textarea_body_placeholder: "e.g. tightness in chest, warmth in heart...",
         btn_save_reflection: "Save Reflection & Access Coach",
         referral_title: "✨ Referral Program",
-        referral_intro: "<strong>Expand Your Lineage, Earn Premium Mirror Access.</strong> When one soul heals, it heals an entire lineage. For every 5 friends or family members who use your link below to step in front of the mirror and save their first reflection, our system will automatically add 7 free days of premium access to your account.",
+        referral_intro: "<strong>When one woman heals, her lineage heals.</strong> Invite a woman who needs this.<br><br><strong>Reward tiers:</strong><br>• 1 friend signs up & saves reflection → +3 free days<br>• 3 friends sign up & save reflection → +7 free days<br>• 5 friends sign up & save reflection → 1 month free (₹999 value)<br>• 10 friends sign up & save reflection → Lineage Healer status + 3 months free (₹2,997 value)",
         referral_enter_email: "Enter your email to generate your custom lineage referral link:",
         btn_register: "Register",
         referral_link_label: "Your Unique Lineage Referral Link:",
@@ -1807,11 +1908,11 @@ const TRANSLATIONS = {
         label_lang: "Choose Language / भाषा चुनें",
         label_name: "Full Name",
         label_email: "Email Address",
-        label_phone: "Phone Number (with WhatsApp)",
+        label_phone: "WhatsApp Number (with country code)",
         btn_start_trial: "Start Free Trial & Open App",
         
         promo_banner_title: "Special Offer: Free Silver Membership!",
-        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.",
+        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free.",
         promo_upgrade: "Upgrade",
         
         lock_expired_title: "Your Free Trial Has Expired",
@@ -1846,7 +1947,7 @@ const TRANSLATIONS = {
         textarea_body_placeholder: "उदा. छाती में जकड़न, दिल में गर्माहट...",
         btn_save_reflection: "प्रतिबिंब सहेजें और कोच तक पहुंचें",
         referral_title: "✨ रेफरल कार्यक्रम",
-        referral_intro: "<strong>अपने वंश का विस्तार करें, प्रीमियम मिरर एक्सेस प्राप्त करें।</strong> जब एक आत्मा ठीक होती है, तो यह पूरे वंश को ठीक करती है। प्रत्येक 5 मित्रों या परिवार के सदस्यों के लिए जो दर्पण के सामने खड़े होने और अपना पहला प्रतिबिंब सहेजने के लिए नीचे दिए गए आपके लिंक का उपयोग करते हैं, हमारा सिस्टम स्वचालित रूप से आपके खाते में 7 मुफ्त प्रीमियम एक्सेस दिन जोड़ देगा।",
+        referral_intro: "<strong>जब एक महिला ठीक होती है, तो उसका वंश ठीक होता है।</strong> ऐसी महिला को आमंत्रित करें जिसे इसकी आवश्यकता है।<br><br><strong>इनाम स्तर:</strong><br>• 1 मित्र शामिल होता है और प्रतिबिंब सहेजता है → +3 मुफ्त दिन<br>• 3 मित्र शामिल होते हैं और प्रतिबिंब सहेजते हैं → +7 मुफ्त दिन<br>• 5 मित्र शामिल होते हैं और प्रतिबिंब सहेजते हैं → 1 महीना मुफ्त (₹999 मूल्य)<br>• 10 मित्र शामिल होते हैं और प्रतिबिंब सहेजते हैं → लीनेज हीलर दर्जा + 3 महीने मुफ्त (₹2,997 मूल्य)",
         referral_enter_email: "अपना कस्टम रेफरल लिंक बनाने के लिए अपना ईमेल दर्ज करें:",
         btn_register: "पंजीकरण करें",
         referral_link_label: "आपका अनूठा रेफरल लिंक:",
@@ -1860,11 +1961,11 @@ const TRANSLATIONS = {
         label_lang: "Choose Language / भाषा चुनें",
         label_name: "पूरा नाम",
         label_email: "ईमेल पता",
-        label_phone: "फ़ोन नंबर (व्हाट्सएप के साथ)",
+        label_phone: "व्हाट्सएप नंबर (देश कोड के साथ)",
         btn_start_trial: "निःशुल्क परीक्षण शुरू करें और ऐप खोलें",
         
         promo_banner_title: "विशेष प्रस्ताव: मुफ्त सिल्वर सदस्यता!",
-        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹1,59,000), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।",
+        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।",
         promo_upgrade: "अपग्रेड करें",
         
         lock_expired_title: "आपका निःशुल्क परीक्षण समाप्त हो गया है",
@@ -1991,16 +2092,22 @@ function showPromoBanner(daysLeft) {
     if (!promoBanner) return;
     
     if (daysLeft >= 1 && daysLeft <= 3) {
+        didOfferAppear = "Yes";
+        if (userOfferResponse === "No Offer Shown") {
+            userOfferResponse = "Not Interested";
+        }
         promoBanner.classList.remove("hidden");
         const bannerDesc = document.getElementById("promo-banner-desc");
         const lang = localStorage.getItem("mirror_language") || "en";
         
         if (lang === "hi") {
-            bannerDesc.textContent = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹1,59,000), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।`;
+            bannerDesc.textContent = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।`;
         } else {
-            bannerDesc.textContent = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.`;
+            bannerDesc.textContent = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free.`;
         }
     } else {
+        didOfferAppear = "No";
+        userOfferResponse = "No Offer Shown";
         promoBanner.classList.add("hidden");
     }
 }
@@ -2193,16 +2300,28 @@ async function checkAccessStatus() {
     const onboardModal = document.getElementById("onboarding-modal");
     
     if (!email) {
-        if (onboardModal) {
-            onboardModal.classList.remove("hidden");
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailParam = urlParams.get("email");
+        const statusParam = urlParams.get("status");
+        if (emailParam && statusParam === "registered") {
+            const cleanEmail = emailParam.trim().toLowerCase();
+            localStorage.setItem("mirror_user_email", cleanEmail);
+            isSubscribed = true;
+            isAccessLocked = false;
+            if (onboardModal) onboardModal.classList.add("hidden");
+            updateLockState();
+        } else {
+            if (onboardModal) {
+                onboardModal.classList.remove("hidden");
+            }
+            isAccessLocked = true;
+            updateLockState();
+            return;
         }
-        isAccessLocked = true;
-        updateLockState();
-        return;
-    }
-    
-    if (onboardModal) {
-        onboardModal.classList.add("hidden");
+    } else {
+        if (onboardModal) {
+            onboardModal.classList.add("hidden");
+        }
     }
     
     const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
@@ -2224,19 +2343,29 @@ async function checkAccessStatus() {
                 setClientTier(tierKey);
             }
             if (data.status === "register_required") {
-                if (onboardModal) onboardModal.classList.remove("hidden");
-                isAccessLocked = true;
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get("status") === "registered") {
+                    isAccessLocked = false;
+                    isSubscribed = true;
+                    if (onboardModal) onboardModal.classList.add("hidden");
+                } else {
+                    if (onboardModal) onboardModal.classList.remove("hidden");
+                    isAccessLocked = true;
+                }
             } else if (data.status === "locked") {
                 isAccessLocked = true;
                 isSubscribed = false;
                 showPromoBanner(0);
             } else if (data.status === "active") {
                 isAccessLocked = false;
+                isTrialUser = data.isTrial ? true : false;
                 if (data.isTrial) {
                     isSubscribed = false;
+                    currentTrialDaysLeft = data.daysLeft;
                     showPromoBanner(data.daysLeft);
                 } else {
                     isSubscribed = true;
+                    currentTrialDaysLeft = null;
                     showPromoBanner(0);
                 }
             }
@@ -2516,18 +2645,16 @@ async function registerUserReferral() {
                 mode: "no-cors",
                 headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({
-                    date: new Date().toLocaleDateString(),
-                    time: new Date().toLocaleTimeString(),
-                    name: userName || "Anonymous (Registered for Referral)",
-                    membershipLevel: currentClientTier || "new",
-                    howFoundUs: `Referred by ${referrerEmail}`,
-                    transcript: "System: Registration log mapping.",
-                    keyEmotions: "None",
-                    keyTopics: "Referral Onboarding",
-                    programsRecommended: "None",
-                    outcome: "Registered",
+                    timestampIST: getISTTimestamp(),
+                    name: userName || localStorage.getItem("mirror_user_name") || "Anonymous (Registered for Referral)",
                     email: emailVal,
-                    referrerEmail: referrerEmail
+                    whatsapp: localStorage.getItem("mirror_user_phone") || "",
+                    membershipVoice: "Fresh Lead",
+                    totalExchanges: 0,
+                    trialDay: "Day 1",
+                    didOfferAppear: "No",
+                    offerResponse: "No Offer Shown",
+                    transcript: `System: Registration log mapping. Referred by ${referrerEmail}`
                 })
             });
         } catch (err) {
@@ -2539,6 +2666,18 @@ async function registerUserReferral() {
 // 3. Dynamic Display & Progress Bar updates
 async function updateReferralUI() {
     const userEmail = localStorage.getItem("mirror_user_email");
+    const referralContainer = document.getElementById("referral-dashboard-container");
+    
+    // Toggle container visibility: only show if at least 1 reflection is completed
+    if (referralContainer) {
+        if (reflectionCount >= 1) {
+            referralContainer.classList.remove("hidden");
+        } else {
+            referralContainer.classList.add("hidden");
+            return; // Exit early since we don't show it yet
+        }
+    }
+    
     if (!userEmail) return;
     
     const regForm = document.getElementById("referral-register-form");
@@ -2565,16 +2704,51 @@ async function updateReferralUI() {
             const days = data.premium_days_credited || 0;
             
             document.getElementById("referral-count-val").textContent = count;
-            document.getElementById("referral-days-val").textContent = `${days} days`;
             
-            // Calculate progress to next multiple of 5
-            const nextMilestone = Math.ceil((count + 1) / 5) * 5 || 5;
-            const prevMilestone = nextMilestone - 5;
-            const progressCount = count - prevMilestone;
-            const progressPercent = (progressCount / 5) * 100;
+            if (count >= 10) {
+                document.getElementById("referral-days-val").innerHTML = `${days} days <span class="badge healer-status" style="background:#b78c2d; color:#ffffff; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:600;">Lineage Healer</span>`;
+            } else {
+                document.getElementById("referral-days-val").textContent = `${days} days`;
+            }
+            
+            // Calculate progress to next reward tier milestone
+            let nextMilestone = 1;
+            let prevMilestone = 0;
+            let progressText = "";
+            
+            if (count >= 10) {
+                nextMilestone = 10;
+                prevMilestone = 5;
+                progressText = "Lineage Healer Status Achieved!";
+            } else if (count >= 5) {
+                nextMilestone = 10;
+                prevMilestone = 5;
+                progressText = `${count}/10 to Lineage Healer`;
+            } else if (count >= 3) {
+                nextMilestone = 5;
+                prevMilestone = 3;
+                progressText = `${count}/5 to 1 Month Free`;
+            } else if (count >= 1) {
+                nextMilestone = 3;
+                prevMilestone = 1;
+                progressText = `${count}/3 to +7 Free Days`;
+            } else {
+                nextMilestone = 1;
+                prevMilestone = 0;
+                progressText = `${count}/1 to +3 Free Days`;
+            }
+            
+            let progressPercent = 0;
+            if (count >= 10) {
+                progressPercent = 100;
+            } else {
+                const totalInTier = nextMilestone - prevMilestone;
+                const completedInTier = count - prevMilestone;
+                progressPercent = Math.max(0, Math.min(100, (completedInTier / totalInTier) * 100));
+            }
             
             document.getElementById("referral-progress-bar").style.width = `${progressPercent}%`;
-            document.getElementById("referral-progress-text").textContent = `${progressCount}/5 to next reward`;
+            document.getElementById("referral-progress-text").textContent = progressText;
         }
     } catch(e) {
         console.warn("Could not retrieve referral statistics from Google Sheets:", e);
@@ -2612,6 +2786,71 @@ window.submitLockEmail = submitLockEmail;
 window.checkAccessStatus = checkAccessStatus;
 window.changeLanguage = changeLanguage;
 window.submitOnboardingForm = submitOnboardingForm;
+window.checkSacredSpaceDailyScreen = checkSacredSpaceDailyScreen;
+
+// --- Sacred Space Screen Handler ---
+function checkSacredSpaceDailyScreen() {
+    const sacredSpaceScreen = document.getElementById("sacred-space-screen");
+    if (!sacredSpaceScreen) return;
+
+    // Get current date string in local/IST time (YYYY-MM-DD)
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const lastSeenDate = localStorage.getItem("mirror_last_sacred_space_date");
+
+    if (lastSeenDate !== todayStr) {
+        // Show Sacred Space screen
+        sacredSpaceScreen.classList.remove("hidden");
+        
+        // Setup ready button handler
+        const btnReady = document.getElementById("btn-sacred-ready");
+        if (btnReady) {
+            btnReady.onclick = () => {
+                localStorage.setItem("mirror_last_sacred_space_date", todayStr);
+                sacredSpaceScreen.classList.add("hidden");
+                console.log("Sacred Space accepted. Loaded mirror prompt.");
+            };
+        }
+    } else {
+        // Already seen today, keep hidden
+        sacredSpaceScreen.classList.add("hidden");
+    }
+}
+
+// --- Dynamic Coaching Offer Handler ---
+function handleOfferResponse(choice) {
+    offerStatus = choice === "yes" ? "accepted" : "declined";
+    
+    if (choice === "yes") {
+        userOfferResponse = "Interested";
+        showTypingIndicator();
+        setTimeout(() => {
+            hideTypingIndicator();
+            const offerDetails = `Here are your options:
+
+Option A — Continue daily AI coaching
+₹999 per month
+
+Option B — Annual AI Coaching + Silver Membership FREE
+₹7,777 per year
+(Silver Membership alone is worth ₹9,999)
+Annual link: https://learn.mirrormagicmovement.com/l/99cee80e7c
+
+Let me know which option feels right for you, or we can keep speaking from the heart.`;
+            addCoachMessage(offerDetails, []);
+            conversationHistory.push({
+                role: "model",
+                parts: [{ text: offerDetails }]
+            });
+        }, 1000);
+    } else {
+        userOfferResponse = "Not Interested";
+        // User changed the subject or declined: just continue coaching naturally!
+        queryHoneyAgent();
+    }
+}
+
+// Expose handleOfferResponse to window scope
+window.handleOfferResponse = handleOfferResponse;
 
 
 

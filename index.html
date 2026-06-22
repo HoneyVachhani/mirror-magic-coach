@@ -13,6 +13,24 @@
     <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 <body>
+    <!-- Sacred Space Daily Welcome Screen -->
+    <div id="sacred-space-screen" class="sacred-space-overlay hidden">
+        <div class="sacred-space-content">
+            <h1 class="sacred-space-title">Before you begin.</h1>
+            <div class="sacred-space-text">
+                <p>This is not an ordinary tool.<br>And you are not here by accident.</p>
+                <p>What you are about to do — looking into your own eyes, honestly, without pretending — is one of the most powerful things a woman can do for herself.</p>
+                <p>It works when you are quiet.<br>When you have set aside real time — just for you.<br>When you are willing to see what you have been avoiding seeing.</p>
+                <p>This is not for time pass.<br>This is for the woman who is ready to go deep.<br>To connect with who she really is.<br>To clear what has been keeping her small.<br>To create the life she knows — somewhere inside — she is meant for.</p>
+                <p>Find a quiet space.<br>Put your phone on silent.<br>Take three slow breaths.</p>
+                <p>My love and my blessings are with you throughout every session.</p>
+                <p>Now — let us begin.</p>
+                <p class="signature">— Honey</p>
+            </div>
+            <button id="btn-sacred-ready" class="btn-sacred-ready">I am ready</button>
+        </div>
+    </div>
+
     <!-- Mandatory Onboarding Modal -->
     <div id="onboarding-modal" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 480px;">
@@ -43,8 +61,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="onboard-phone" id="label-onboard-phone" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Phone Number (with WhatsApp)</label>
-                        <input type="tel" id="onboard-phone" placeholder="Enter your phone number..." required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
+                        <label for="onboard-phone" id="label-onboard-phone" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">WhatsApp Number (with country code)</label>
+                        <input type="tel" id="onboard-phone" placeholder="+91 98765 43210" required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
                     </div>
 
                     <div id="referrer-info-msg" class="hidden" style="font-size: 0.85rem; color: var(--color-primary); font-weight: 500; margin-top: 5px;"></div>
@@ -151,6 +169,51 @@
 
         <!-- Center Column: Centered Mirror & Daily Journal -->
         <section class="mirror-pane pane-section active" id="mirror-pane">
+            <!-- Referral Dashboard Card (Prominently placed at the top, hidden by default until session 1 completed) -->
+            <div class="referral-dashboard-card glass-panel hidden" id="referral-dashboard-container" style="margin-bottom: 20px;">
+                <h2 class="section-title text-gold" style="font-size: 1.25rem; margin-bottom: 10px;">✨ Referral Program</h2>
+                <div class="referral-box-content" style="background-color: #fffbf2; border: 2px solid var(--color-primary); border-radius: 14px; padding: 20px; color: #1C1C1E; text-align: left; font-family: var(--font-body); font-size: 0.94rem; box-shadow: 0 4px 12px rgba(183, 140, 45, 0.05);">
+                    <p style="margin-bottom: 15px; font-weight: 500; line-height: 1.5; color: #1C1C1E;" id="referral-box-headline">
+                        <strong>When one woman heals, her lineage heals.</strong> Invite a woman who needs this.
+                    </p>
+                    
+                    <!-- Registration State -->
+                    <div id="referral-register-form">
+                        <p style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">Enter your email to generate your custom lineage referral link:</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="email" id="referral-email-input" placeholder="Enter your email address..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.9rem;">
+                            <button id="btn-referral-register" class="btn btn-primary" onclick="registerUserReferral()" style="padding: 10px 20px;">Register</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lineage Link State (Hidden by default) -->
+                    <div id="referral-info-display" class="hidden">
+                        <div style="margin-bottom: 15px;">
+                            <span style="font-size: 0.82rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Your Unique Lineage Referral Link:</span>
+                            <div style="display: flex; gap: 8px; align-items: center; background: #ffffff; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(183, 140, 45, 0.2);">
+                                <input type="text" id="referral-link-display" readonly style="flex: 1; border: none; background: transparent; font-family: monospace; font-size: 0.85rem; color: #1C1C1E; outline: none;" value="">
+                                <button class="btn btn-secondary btn-sm" onclick="copyReferralLink()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; white-space: nowrap;">Copy Link</button>
+                            </div>
+                        </div>
+                        
+                        <div style="border-top: 1px dashed rgba(183, 140, 45, 0.2); padding-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 500; margin-bottom: 8px;">
+                                <span>Successful Referrals: <strong id="referral-count-val" style="color: var(--color-primary);">0</strong></span>
+                                <span>Premium Days Credited: <strong id="referral-days-val" style="color: var(--color-primary);">0 days</strong></span>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div style="margin-bottom: 5px;">
+                                <div style="width: 100%; background: rgba(183, 140, 45, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
+                                    <div id="referral-progress-bar" style="background: var(--color-primary); width: 0%; height: 100%; transition: width 0.4s ease;"></div>
+                                </div>
+                            </div>
+                            <div id="referral-progress-text" style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right;">0/1 to next reward</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Daily Alignment card -->
             <div class="daily-alignment-card glass-panel" id="daily-alignment-container">
                 <h2 class="section-title text-gold">✨ Daily Alignment Practice</h2>
@@ -228,50 +291,6 @@
                 </div>
             </div>
 
-            <!-- Referral Dashboard Card -->
-            <div class="referral-dashboard-card glass-panel" id="referral-dashboard-container" style="margin-top: 20px;">
-                <h2 class="section-title text-gold" style="font-size: 1.25rem; margin-bottom: 10px;">✨ Referral Program</h2>
-                <div class="referral-box-content" style="background-color: #fffbf2; border: 2px solid var(--color-primary); border-radius: 14px; padding: 20px; color: #1C1C1E; text-align: left; font-family: var(--font-body); font-size: 0.94rem; box-shadow: 0 4px 12px rgba(183, 140, 45, 0.05);">
-                    <p style="margin-bottom: 15px; font-weight: 500; line-height: 1.5; color: #1C1C1E;">
-                        <strong>Expand Your Lineage, Earn Premium Mirror Access.</strong> When one soul heals, it heals an entire lineage. For every 5 friends or family members who use your link below to step in front of the mirror and save their first reflection, our system will automatically add 7 free days of premium access to your account.
-                    </p>
-                    
-                    <!-- Registration State -->
-                    <div id="referral-register-form">
-                        <p style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">Enter your email to generate your custom lineage referral link:</p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <input type="email" id="referral-email-input" placeholder="Enter your email address..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.9rem;">
-                            <button id="btn-referral-register" class="btn btn-primary" onclick="registerUserReferral()" style="padding: 10px 20px;">Register</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Lineage Link State (Hidden by default) -->
-                    <div id="referral-info-display" class="hidden">
-                        <div style="margin-bottom: 15px;">
-                            <span style="font-size: 0.82rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Your Unique Lineage Referral Link:</span>
-                            <div style="display: flex; gap: 8px; align-items: center; background: #ffffff; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(183, 140, 45, 0.2);">
-                                <input type="text" id="referral-link-display" readonly style="flex: 1; border: none; background: transparent; font-family: monospace; font-size: 0.85rem; color: #1C1C1E; outline: none;" value="">
-                                <button class="btn btn-secondary btn-sm" onclick="copyReferralLink()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; white-space: nowrap;">Copy Link</button>
-                            </div>
-                        </div>
-                        
-                        <div style="border-top: 1px dashed rgba(183, 140, 45, 0.2); padding-top: 15px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 500; margin-bottom: 8px;">
-                                <span>Successful Referrals: <strong id="referral-count-val" style="color: var(--color-primary);">0</strong></span>
-                                <span>Premium Days Credited: <strong id="referral-days-val" style="color: var(--color-primary);">0 days</strong></span>
-                            </div>
-                            
-                            <!-- Progress Bar -->
-                            <div style="margin-bottom: 5px;">
-                                <div style="width: 100%; background: rgba(183, 140, 45, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
-                                    <div id="referral-progress-bar" style="background: var(--color-primary); width: 0%; height: 100%; transition: width 0.4s ease;"></div>
-                                </div>
-                            </div>
-                            <div id="referral-progress-text" style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right;">0/5 to next reward</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </section>
 
         <!-- Right Column: Main Coaching Chat Pane -->
@@ -315,7 +334,7 @@
                     <span class="promo-icon">✨</span>
                     <div class="promo-text-wrapper">
                         <p class="promo-title" id="promo-banner-title">Special Offer: Free Silver Membership!</p>
-                        <p class="promo-desc" id="promo-banner-desc">Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹1,59,000), Live Coaching, and Blessathons free.</p>
+                        <p class="promo-desc" id="promo-banner-desc">Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free.</p>
                     </div>
                 </div>
                 <div class="promo-actions">
@@ -372,49 +391,6 @@
         </main>
     </div>
 
-    <!-- Pilot Pricing Feedback Survey Modal -->
-    <div id="subscription-modal" class="modal-overlay hidden">
-        <div class="modal-content glass-panel text-center">
-            <div class="modal-header">
-                <span class="modal-gold-icon">🌸</span>
-                <h2>Welcome to Mirror Magic Pilot!</h2>
-                <p>Your daily reflection has been saved. Help us price this service before our official launch.</p>
-            </div>
-            
-            <div class="modal-body">
-                <p class="survey-question" style="margin-bottom: 25px; font-weight: 500; font-size: 1.05rem; line-height: 1.5; color: var(--color-text-primary);">
-                    <strong>How should this Daily Mirror Magic Coach container be valued in your journey?</strong>
-                </p>
-                
-                <div class="survey-options-group">
-                    <label class="survey-radio-option">
-                        <input type="radio" name="survey-pricing" value="exclusive-standalone" checked onclick="toggleCustomPriceInput(false)">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">Keep it as an exclusive, standalone daily tool at <strong>₹999/month</strong>.</span>
-                    </label>
-                    <label class="survey-radio-option">
-                        <input type="radio" name="survey-pricing" value="silver-bundle" onclick="toggleCustomPriceInput(false)">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">Bundle it as a complimentary daily anchor included with my <strong>Silver Membership (₹9,999/year)</strong>.</span>
-                    </label>
-                    <label class="survey-radio-option">
-                        <input type="radio" name="survey-pricing" value="custom-amount" id="radio-custom-trigger" onclick="toggleCustomPriceInput(true)">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">Other Amount</span>
-                    </label>
-                </div>
-
-                <div class="form-group hidden" id="custom-price-field" style="margin-top: 20px; margin-bottom: 20px;">
-                    <input type="text" id="custom-price-input" placeholder="Type your custom suggested value (e.g. ₹499)..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; text-align: center; font-family: var(--font-body); font-size: 0.9rem; color: var(--color-text-primary);">
-                </div>
-                
-                <button class="btn btn-primary btn-block btn-lg" onclick="submitPricingSurvey()">
-                    Submit & Unlock Honey AI Coach
-                </button>
-            </div>
-            <button class="modal-close" onclick="closeSubscriptionModal()">✕</button>
-        </div>
-    </div>
 
     <!-- JavaScript Bundle -->
     <script src="app.js?v=4.2"></script>

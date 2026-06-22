@@ -7,8 +7,21 @@ var SHEET_ID = "14m7Y6KQ655f2fgcFWIK6Axg_kymbFq1WmlqsGjrlWLo";
 
 function doGet(e) {
   try {
-    var email = e.parameter.email;
     var action = e.parameter.action;
+    
+    // Health check endpoint
+    if (action === "health") {
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var usersSheet = ss.getSheetByName("Users");
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        message: "Spreadsheet connection is live",
+        spreadsheetName: ss.getName(),
+        usersSheetExists: !!usersSheet
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var email = e.parameter.email;
     
     if (!email) {
       return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Email parameter required" }))
@@ -119,7 +132,7 @@ function doGet(e) {
         }
       }
       
-      var premiumDaysCredited = Math.floor(totalSuccessfulReferrals / 5) * 7;
+      var premiumDaysCredited = getBonusDaysForReferrals(totalSuccessfulReferrals);
       
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
@@ -215,47 +228,38 @@ function doPost(e) {
     }
     
     // Standard Conversation Log Append
-    var sheet = ss.getActiveSheet();
+    var sheet = ss.getSheetByName("ConversationLogs");
+    if (!sheet) {
+      sheet = ss.insertSheet("ConversationLogs");
+    }
     
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
-        "Date", 
-        "Time", 
-        "Name", 
-        "Membership Level", 
-        "How They Found Us",
-        "Traffic Source",
-        "Conversation Transcript", 
-        "Key Emotions Mentioned", 
-        "Key Topics Mentioned", 
-        "Programs Recommended", 
-        "Outcome",
-        "User Email",
-        "Referrer Email"
+        "Timestamp (IST)", 
+        "User Full Name", 
+        "User Email Address", 
+        "User WhatsApp Number", 
+        "Membership Voice Selected", 
+        "Total Exchanges", 
+        "Trial Day Number", 
+        "Did Offer Appear?", 
+        "User Response to Offer", 
+        "Full Conversation Transcript"
       ]);
-      sheet.getRange("A1:M1").setFontWeight("bold");
-    } else {
-      var headerL = sheet.getRange("L1").getValue();
-      if (!headerL) {
-        sheet.getRange("L1").setValue("User Email").setFontWeight("bold");
-        sheet.getRange("M1").setValue("Referrer Email").setFontWeight("bold");
-      }
+      sheet.getRange("A1:J1").setFontWeight("bold");
     }
     
     sheet.appendRow([
-      data.date || "",
-      data.time || "",
+      data.timestampIST || "",
       data.name || "",
-      data.membershipLevel || "",
-      data.howFoundUs || "", 
-      data.howFoundUs || "", 
-      data.transcript || "", 
-      data.keyEmotions || "", 
-      data.keyTopics || "", 
-      data.programsRecommended || "", 
-      data.outcome || "",
-      (data.email || "").toString().trim().toLowerCase(),
-      (data.referrerEmail || "").toString().trim().toLowerCase()
+      data.email || "",
+      data.whatsapp || "",
+      data.membershipVoice || "",
+      data.totalExchanges || 0,
+      data.trialDay || "",
+      data.didOfferAppear || "",
+      data.offerResponse || "",
+      data.transcript || ""
     ]);
     
     // Update referred status when first reflection completed
@@ -296,14 +300,18 @@ function doPost(e) {
                   verifiedCount++;
                 }
               }
-              // Calculate bonus days: 7 days for every 5 successful referrals
-              var bonusDays = Math.floor(verifiedCount / 5) * 7;
+              // Calculate bonus days based on new referral tiers
+              var bonusDays = getBonusDaysForReferrals(verifiedCount);
               usersSheet.getRange(referrerRowIndex, 9).setValue(bonusDays);
             }
           }
         }
       }
     }
+    
+    
+    // Check and trigger WhatsApp nudges (Aisensy integration)
+    checkAndTriggerNudges(data, usersSheet);
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -312,4 +320,87 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/**
+ * Checks trial day parameters and triggers corresponding WhatsApp notifications using the Aisensy API.
+ * 
+ * Required Aisensy API details to configure:
+ * - AISENSY_API_KEY: Campaign trigger API key / token.
+ * - AISENSY_CAMPAIGN_DAY3: Name of the Day 3 template campaign.
+ * - AISENSY_CAMPAIGN_DAY7: Name of the Day 7 template campaign.
+ */
+var AISENSY_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1NmNhOTk4ZGUxMGQ0YzZlMiM1bWw1OiJnaXJyb3JfbWg3Wll1bWlQcjhjYWxJciJjdi11IjoiaQw1TzW5zeSIsImNsaWVuWiJjIiJjNnZiYjgzZjQ0NH0.JKAjJYs7PMotnigdvk0QCPp0_Dp-J5V_rvg24FSPxL0"; // Replace with your actual Aisensy API Key
+var AISENSY_API_URL = "https://backend.aisensy.com/campaign/t1/api/v2";
+
+function checkAndTriggerNudges(data, usersSheet) {
+  try {
+    var userEmail = (data.email || "").toString().trim().toLowerCase();
+    var whatsapp = (data.whatsapp || "").toString().trim();
+    var trialDay = (data.trialDay || "").toString().trim();
+    
+    if (!whatsapp || !trialDay) return;
+    
+    // Remove spacing/special characters from phone, ensure country code is clean
+    var cleanPhone = whatsapp.replace(/[^0-9+]/g, "");
+    if (!cleanPhone.startsWith("+")) {
+      // Default to India country code if not present (as fallback)
+      cleanPhone = "+91" + cleanPhone.replace(/^0+/, "");
+    }
+    
+    var campaignName = "";
+    var templateParams = [];
+    var destinationLink = "https://coach.mirrormagicmethod.com";
+    
+    if (trialDay === "Day 3") {
+      campaignName = "mirror_day3_nudge"; // Name of template campaign in Aisensy
+      templateParams = [data.name || "friend"];
+    } else if (trialDay === "Day 7") {
+      campaignName = "mirror_day7_offer"; // Name of template campaign in Aisensy
+      templateParams = [data.name || "friend"];
+    } else {
+      return; // No nudge defined for other days
+    }
+    
+    if (AISENSY_API_KEY === "YOUR_AISENSY_API_KEY") {
+      Logger.log("Aisensy API key not configured. Trigger log for: " + campaignName + " to " + cleanPhone);
+      return;
+    }
+    
+    // Payload format as per Aisensy Campaign API docs:
+    // POST to https://backend.aisensy.com/campaign/t1/api/v2
+    var payload = {
+      "apiKey": AISENSY_API_KEY,
+      "campaignName": campaignName,
+      "destination": cleanPhone,
+      "userName": data.name || "User",
+      "templateParams": templateParams,
+      "source": "MirrorMagicCoach"
+    };
+    
+    var options = {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload),
+      "muteHttpExceptions": true
+    };
+    
+    var response = UrlFetchApp.fetch(AISENSY_API_URL, options);
+    Logger.log("Aisensy Response for " + campaignName + ": " + response.getContentText());
+  } catch(e) {
+    Logger.log("Error triggering Aisensy WhatsApp nudge: " + e.toString());
+  }
+}
+
+// Reward tiers:
+// 1 referral -> +3 days
+// 3 referrals -> +7 days
+// 5 referrals -> 30 days (1 month free)
+// 10 referrals -> 90 days (3 months free)
+function getBonusDaysForReferrals(count) {
+  if (count >= 10) return 90;
+  if (count >= 5) return 30;
+  if (count >= 3) return 7;
+  if (count >= 1) return 3;
+  return 0;
 }
