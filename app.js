@@ -1107,16 +1107,28 @@ function selectTrafficSource(source) {
     showTypingIndicator();
     setTimeout(() => {
         hideTypingIndicator();
-        pendingGreetingText = "Welcome {name}. Mirror Magic is a sacred space of coming back to yourself and realizing you are enough.\n\nWhat is the biggest challenge or dream you are carrying in your heart today? Let's talk.";
-        addCoachMessage("What is your name? I would love to know who I am speaking with.", []);
+        
+        const storedName = localStorage.getItem("mirror_user_name") || "friend";
+        userName = storedName;
+        isOnboardingNamePrompt = false;
+        isFirstHandshake = false;
+        
+        const finalGreeting = `Welcome ${userName}. Mirror Magic is a sacred space of coming back to yourself and realizing you are enough.\n\nWhat is the biggest challenge or dream you are carrying in your heart today? Let's talk.`;
+        addCoachMessage(finalGreeting);
         
         conversationHistory.push(
             { role: "model", parts: [{ text: "Are you new to Mirror Magic, or are you already part of our community?" }] },
             { role: "user", parts: [{ text: "I am new here." }] },
             { role: "model", parts: [{ text: "Lovely — and how did you find your way here? Instagram, YouTube, a friend, WhatsApp, LinkedIn, or did you search online?" }] },
-            { role: "user", parts: [{ text: `I found you through ${source}.` }] }
+            { role: "user", parts: [{ text: `I found you through ${source}.` }] },
+            { role: "model", parts: [{ text: finalGreeting }] }
         );
-        isOnboardingNamePrompt = true;
+        
+        // Show daily alignment pane
+        document.getElementById("daily-alignment-container").classList.remove("hidden");
+        
+        // Lock the chat container for fresh leads
+        updateLockState();
     }, 1000);
 }
 
@@ -1128,23 +1140,35 @@ function selectMemberLevel(level) {
     setTimeout(() => {
         hideTypingIndicator();
         
+        const storedName = localStorage.getItem("mirror_user_name") || "friend";
+        userName = storedName;
+        isOnboardingNamePrompt = false;
+        isFirstHandshake = false;
+        
+        let finalGreeting = "";
         if (level === "silver") {
-            pendingGreetingText = `It is beautiful to connect with you, {name}. I am glad you are here. How is your daily mirror work going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
+            finalGreeting = `It is beautiful to connect with you, ${userName}. I am glad you are here. How is your daily mirror work going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
         } else if (level === "gold") {
-            pendingGreetingText = `It is beautiful to connect with you, {name}. I am glad you are here. How is your Money Mirror Sadhana™ going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
+            finalGreeting = `It is beautiful to connect with you, ${userName}. I am glad you are here. How is your Money Mirror Sadhana™ going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
         } else {
-            pendingGreetingText = `Welcome back, {name}. I am glad you are here. What deep identity shifts are we working on, or what are you becoming aware of inside your body right now? Speak raw and uncensored.`;
+            finalGreeting = `Welcome back, ${userName}. I am glad you are here. What deep identity shifts are we working on, or what are you becoming aware of inside your body right now? Speak raw and uncensored.`;
         }
         
-        addCoachMessage("What is your name? I would love to know who I am speaking with.", []);
+        addCoachMessage(finalGreeting);
         
         conversationHistory.push(
             { role: "model", parts: [{ text: "Are you new to Mirror Magic, or are you already part of our community?" }] },
             { role: "user", parts: [{ text: "I am already a community member." }] },
             { role: "model", parts: [{ text: "Welcome back. Which level is your membership?" }] },
-            { role: "user", parts: [{ text: `I am a ${level.charAt(0).toUpperCase() + level.slice(1)} member.` }] }
+            { role: "user", parts: [{ text: `I am a ${level.charAt(0).toUpperCase() + level.slice(1)} member.` }] },
+            { role: "model", parts: [{ text: finalGreeting }] }
         );
-        isOnboardingNamePrompt = true;
+        
+        // Show daily alignment pane
+        document.getElementById("daily-alignment-container").classList.remove("hidden");
+        
+        // Update overlay states
+        updateLockState();
     }, 1000);
 }
 
@@ -2674,11 +2698,16 @@ async function updateReferralUI() {
         }
     }
     
-    if (!userEmail) return;
-    
     const regForm = document.getElementById("referral-register-form");
     const infoDisplay = document.getElementById("referral-info-display");
     const linkDisplay = document.getElementById("referral-link-display");
+    
+    if (!userEmail) {
+        // Show form to register for referral, hide link display
+        if (regForm) regForm.classList.remove("hidden");
+        if (infoDisplay) infoDisplay.classList.add("hidden");
+        return;
+    }
     
     if (regForm) regForm.classList.add("hidden");
     if (infoDisplay) infoDisplay.classList.remove("hidden");
