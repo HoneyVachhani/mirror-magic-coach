@@ -1520,19 +1520,26 @@ html, body {
 
 @media (max-width: 480px) {
     .sacred-space-overlay {
-        padding: 30px 16px;
+        padding: 20px 16px;
+        align-items: flex-start; /* Allow scrolling from top on smaller screens */
+    }
+    .sacred-space-content {
+        gap: 16px;
+        padding-bottom: 40px; /* Add extra room at bottom so button isn't cut off */
     }
     .sacred-space-title {
-        font-size: 1.9rem;
+        font-size: 1.6rem;
     }
     .sacred-space-text {
-        font-size: 1rem;
-        line-height: 1.6;
-        gap: 16px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        gap: 12px;
     }
     .btn-sacred-ready {
-        padding: 14px 40px;
-        font-size: 1.05rem;
+        padding: 12px 30px;
+        font-size: 1rem;
+        margin-top: 10px;
+        max-width: 100%; /* Make button wider and easier to tap on mobile */
     }
 }
 
