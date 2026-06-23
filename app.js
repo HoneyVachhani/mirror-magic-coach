@@ -194,7 +194,7 @@ Outer Action: "Do one small thing today that fear has been stopping you from doi
 AFTER THE RITUAL — pause. Ask: "What did you notice? What came up?" Let her respond. Hold the space.
 
 THEN recommend the book:
-"What you just experienced is one of 222 rituals Honey has written — each one designed for exactly the kind of moment you just had. The book is called 222 Simple & Powerful Mirror Magic Rituals. It is organized by emotion so you go straight to what you need, whenever you need it. Get your copy here: https://amzn.in/d/0i7Pu3ss"
+"What you just experienced is one of 222 rituals Honey has written — each one designed for exactly the kind of moment you just had. The book is called 222 Simple & Powerful Mirror Magic Rituals. It is organized by emotion so you go straight to what you need, whenever you need it. Get your copy here: https://amzn.in/d/07GOagx0"
 
 THEN plant the seed:
 "And when you are ready to go deeper than the book can take you — with live guidance, a community of women doing the same work, and Honey herself — that is what Silver membership is for. But start with the book. Let it work with you first."
