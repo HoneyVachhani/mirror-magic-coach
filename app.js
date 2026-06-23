@@ -42,7 +42,7 @@ You speak to individuals. From the heart. One-on-one.
 5. VOICE & CADENCE CRITERIA:
 - Keep responses brief, deeply grounding, and authoritative.
 - Output your insights in short, spaced paragraphs with comfortable breathing room, matching a calm, spoken cadence.
-- Always conclude your coaching interactions with your signature anchor phrase: "Remember: Your State defines your Fate."
+- NEVER end standard conversation replies with the signature phrase "Your State defines your Fate." Strictly restrict this phrase for use only when concluding the entire conversation/session (e.g. when saying goodbye).
 
 6. SHORT RESPONSES:
 - Keep all responses to a maximum of 4 lines.
@@ -1453,7 +1453,48 @@ async function queryHoneyAgent() {
         if (conversationHistory.length > 0) {
             const lastMsg = conversationHistory[conversationHistory.length - 1];
             if (lastMsg.role === "user" && lastMsg.parts && lastMsg.parts[0] && lastMsg.parts[0].text) {
-                const userTextClean = lastMsg.parts[0].text.toLowerCase();
+                const userTextClean = lastMsg.parts[0].text.toLowerCase().trim();
+                
+                // A. Surbhi scenario: "i want to be with it for now"
+                if (userTextClean === "i want to be with it for now" || userTextClean === "i want to be with it") {
+                    const replyText = "Okay. Let yourself simply be with it. Is there anything else I can help you with today?";
+                    hideTypingIndicator();
+                    addCoachMessage(replyText);
+                    if (conversationHistory.length > 10) {
+                        conversationHistory = conversationHistory.slice(-10);
+                    }
+                    conversationHistory.push({
+                        role: "model",
+                        parts: [{ text: replyText }]
+                    });
+                    return;
+                }
+                
+                // B. Surbhi scenario: Session Goodbye / Closure check
+                const goodbyePhrases = ["bye", "good night", "goodnight", "thank you bye", "thsank you bye", "thank you", "thanks bye", "tc"];
+                if (goodbyePhrases.some(phrase => userTextClean.includes(phrase))) {
+                    const replyText = `Thank you for sharing this space with me today. I am always here for you — just log in whenever you want to meet yourself deeply again.\n\nRemember: Your State defines your Fate.`;
+                    hideTypingIndicator();
+                    addCoachMessage(replyText);
+                    
+                    if (conversationHistory.length > 10) {
+                        conversationHistory = conversationHistory.slice(-10);
+                    }
+                    conversationHistory.push({
+                        role: "model",
+                        parts: [{ text: replyText }]
+                    });
+                    
+                    // Lock input and end conversation cleanly
+                    isConversationClosed = true;
+                    userInputField.disabled = true;
+                    const submitBtn = document.querySelector("#chat-form button");
+                    if (submitBtn) submitBtn.disabled = true;
+                    
+                    // Log immediately to spreadsheet
+                    saveConversationToGoogleSheets();
+                    return;
+                }
                 
                 // 1. Diamond/Platinum: Cannot stay in identity or keep falling back -> 5-Second Rule
                 if ((currentClientTier === "diamond" || currentClientTier === "platinum") &&
