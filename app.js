@@ -1977,7 +1977,7 @@ const TRANSLATIONS = {
         btn_start_trial: "Start Free Trial & Open App",
         
         promo_banner_title: "Special Offer: Free Silver Membership!",
-        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free.",
+        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free. Use coupon code <strong>aicoach</strong> at checkout to get the ₹7,777 offer!",
         promo_upgrade: "Upgrade",
         
         lock_expired_title: "Your Free Trial Has Expired",
@@ -2030,7 +2030,7 @@ const TRANSLATIONS = {
         btn_start_trial: "निःशुल्क परीक्षण शुरू करें और ऐप खोलें",
         
         promo_banner_title: "विशेष प्रस्ताव: मुफ्त सिल्वर सदस्यता!",
-        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।",
+        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें। ₹7,777 का ऑफर पाने के लिए चेकआउट पर कूपन कोड <strong>aicoach</strong> का उपयोग करें!",
         promo_upgrade: "अपग्रेड करें",
         
         lock_expired_title: "आपका निःशुल्क परीक्षण समाप्त हो गया है",
@@ -2143,7 +2143,7 @@ function changeLanguage(lang) {
     const promoBannerTitle = document.getElementById("promo-banner-title");
     if (promoBannerTitle) promoBannerTitle.textContent = t.promo_banner_title;
     const promoBannerDesc = document.getElementById("promo-banner-desc");
-    if (promoBannerDesc) promoBannerDesc.textContent = t.promo_banner_desc;
+    if (promoBannerDesc) promoBannerDesc.innerHTML = t.promo_banner_desc;
     const promoUpgrade = document.getElementById("promo-upgrade-link");
     if (promoUpgrade) promoUpgrade.textContent = t.promo_upgrade;
     
@@ -2166,9 +2166,9 @@ function showPromoBanner(daysLeft) {
         const lang = localStorage.getItem("mirror_language") || "en";
         
         if (lang === "hi") {
-            bannerDesc.textContent = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें।`;
+            bannerDesc.innerHTML = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें। ₹7,777 का ऑफर पाने के लिए चेकआउट पर कूपन कोड <strong>aicoach</strong> का उपयोग करें!`;
         } else {
-            bannerDesc.textContent = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free.`;
+            bannerDesc.innerHTML = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free. Use coupon code <strong>aicoach</strong> at checkout to get the ₹7,777 offer!`;
         }
     } else {
         didOfferAppear = "No";
@@ -2327,7 +2327,8 @@ function updateLockState() {
                             <strong>${silverFreeLabel}</strong><br>
                             ${silverWorthLabel}<br>
                             Monday Live Group Coaching<br>
-                            Blessathons & More!
+                            Blessathons & More!<br>
+                            <span style="color: #d9383a; font-weight: bold; display: inline-block; margin-top: 8px;">Use Coupon Code: aicoach</span>
                         </div>
                         <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
                     </div>
