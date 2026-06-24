@@ -1978,8 +1978,8 @@ const TRANSLATIONS = {
         label_phone: "WhatsApp Number (with country code)",
         btn_start_trial: "Start Free Trial & Open App",
         
-        promo_banner_title: "Special Offer: Free Silver Membership!",
-        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free. Use coupon code <strong>aicoach</strong> at checkout to get the ₹7,777 offer!",
+        promo_banner_title: "Special Offer: Unlock Honey AI Coach!",
+        promo_banner_desc: "Upgrade to the Annual Plan (₹7,777/year) for unlimited, 24/7 access to your Honey AI Coach. Save ₹4,211 over the monthly plan!",
         promo_upgrade: "Upgrade",
         
         lock_expired_title: "Your Free Trial Has Expired",
@@ -2035,8 +2035,8 @@ const TRANSLATIONS = {
         label_phone: "व्हाट्सएप नंबर (देश कोड के साथ)",
         btn_start_trial: "निःशुल्क परीक्षण शुरू करें और ऐप खोलें",
         
-        promo_banner_title: "विशेष प्रस्ताव: मुफ्त सिल्वर सदस्यता!",
-        promo_banner_desc: "वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें। ₹7,777 का ऑफर पाने के लिए चेकआउट पर कूपन कोड <strong>aicoach</strong> का उपयोग करें!",
+        promo_banner_title: "विशेष प्रस्ताव: हनी एआई कोच अनलॉक करें!",
+        promo_banner_desc: "Honey AI Coach तक असीमित, 24/7 पहुंच के लिए वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें। मासिक योजना की तुलना में ₹4,211 बचाएं!",
         promo_upgrade: "अपग्रेड करें",
         
         lock_expired_title: "आपका निःशुल्क परीक्षण समाप्त हो गया है",
@@ -2176,9 +2176,9 @@ function showPromoBanner(daysLeft) {
         const lang = localStorage.getItem("mirror_language") || "en";
         
         if (lang === "hi") {
-            bannerDesc.innerHTML = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मुफ्त में सिल्वर सदस्यता (मूल्य ₹9,999), लाइव कोचिंग और ब्लेसथॉन अनलॉक करें। ₹7,777 का ऑफर पाने के लिए चेकआउट पर कूपन कोड <strong>aicoach</strong> का उपयोग करें!`;
+            bannerDesc.innerHTML = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! Honey AI Coach तक असीमित, 24/7 पहुंच के लिए वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मासिक योजना की तुलना में ₹4,211 बचाएं!`;
         } else {
-            bannerDesc.innerHTML = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) and unlock Silver Membership (worth ₹9,999), Live Coaching, and Blessathons free. Use coupon code <strong>aicoach</strong> at checkout to get the ₹7,777 offer!`;
+            bannerDesc.innerHTML = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) for unlimited, 24/7 access to your Honey AI Coach. Save ₹4,211 over the monthly plan!`;
         }
     } else {
         didOfferAppear = "No";
@@ -2297,8 +2297,6 @@ function updateLockState() {
         lockOverlay.classList.remove("hidden");
         
         let recommendedLabel = lang === "hi" ? "अनुशंसित" : "Recommended";
-        let silverFreeLabel = lang === "hi" ? "मुफ्त सिल्वर सदस्यता!" : "Includes FREE Silver Membership!";
-        let silverWorthLabel = lang === "hi" ? "सिल्वर सदस्यता + लाइव कोचिंग" : "Silver Membership + Live Coaching";
         let annualPlanBtnText = lang === "hi" ? "वार्षिक चुनें" : "Choose Annual";
         let planBtnText = lang === "hi" ? "सदस्यता लें" : "Subscribe";
         
@@ -2312,11 +2310,12 @@ function updateLockState() {
                     <!-- Monthly Plan -->
                     <div class="pricing-card">
                         <div class="pricing-card-title">Monthly</div>
-                        <div class="pricing-card-price">₹999</div>
-                        <div class="pricing-card-period">per month</div>
+                        <div class="pricing-card-price">₹999<span style="font-size: 0.95rem; font-weight: normal;"> / mo</span></div>
+                        <div class="pricing-card-period">Billed monthly</div>
                         <div class="pricing-card-features">
-                            Daily Mirror Magic Coach Access<br>
-                            Somatic Alignment Logs
+                            24/7 Unlimited AI Coach Access<br>
+                            Somatic & Metaphysical Mapping<br>
+                            Daily Alignment & Reflection Logs
                         </div>
                         <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
@@ -2324,11 +2323,12 @@ function updateLockState() {
                     <!-- Quarterly Plan -->
                     <div class="pricing-card">
                         <div class="pricing-card-title">Quarterly</div>
-                        <div class="pricing-card-price">₹2,499</div>
-                        <div class="pricing-card-period">for 3 months (~₹833/mo)</div>
+                        <div class="pricing-card-price">₹833<span style="font-size: 0.95rem; font-weight: normal;"> / mo</span></div>
+                        <div class="pricing-card-period">Billed ₹2,499 quarterly</div>
                         <div class="pricing-card-features">
-                            Save ₹500 vs Monthly<br>
-                            Daily Coach Guidance
+                            <strong style="color: #2e7d32;">Save ₹498 vs Monthly</strong><br>
+                            24/7 Unlimited AI Coach Access<br>
+                            Somatic & Metaphysical Mapping
                         </div>
                         <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
@@ -2336,11 +2336,12 @@ function updateLockState() {
                     <!-- Half-Yearly Plan -->
                     <div class="pricing-card">
                         <div class="pricing-card-title">Half-Yearly</div>
-                        <div class="pricing-card-price">₹4,499</div>
-                        <div class="pricing-card-period">for 6 months (~₹750/mo)</div>
+                        <div class="pricing-card-price">₹750<span style="font-size: 0.95rem; font-weight: normal;"> / mo</span></div>
+                        <div class="pricing-card-period">Billed ₹4,499 half-yearly</div>
                         <div class="pricing-card-features">
-                            Save ₹1,500 vs Monthly<br>
-                            Continuous Cleansing Anchor
+                            <strong style="color: #2e7d32;">Save ₹1,495 vs Monthly</strong><br>
+                            24/7 Unlimited AI Coach Access<br>
+                            Somatic & Metaphysical Mapping
                         </div>
                         <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
@@ -2349,14 +2350,13 @@ function updateLockState() {
                     <div class="pricing-card recommended">
                         <span class="pricing-badge">${recommendedLabel}</span>
                         <div class="pricing-card-title">Annual</div>
-                        <div class="pricing-card-price" style="font-size: 1.8rem; margin-top: 5px;">₹7,777</div>
-                        <div class="pricing-card-period">per year (~₹648/mo)</div>
+                        <div class="pricing-card-price" style="font-size: 1.8rem; margin-top: 5px;">₹648<span style="font-size: 0.95rem; font-weight: normal;"> / mo</span></div>
+                        <div class="pricing-card-period">Billed ₹7,777 annually</div>
                         <div class="pricing-card-features" style="font-weight: 500;">
-                            <strong>${silverFreeLabel}</strong><br>
-                            ${silverWorthLabel}<br>
-                            Monday Live Group Coaching<br>
-                            Blessathons & More!<br>
-                            <span style="color: #d9383a; font-weight: bold; display: inline-block; margin-top: 8px;">Use Coupon Code: aicoach</span>
+                            <strong style="color: #2e7d32;">MAX SAVINGS: Save ₹4,211</strong><br>
+                            24/7 Unlimited AI Coach Access<br>
+                            Somatic & Metaphysical Mapping<br>
+                            Daily Alignment & Reflection Logs
                         </div>
                         <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
                     </div>
