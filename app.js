@@ -1599,11 +1599,12 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
         if (isSubscribed && currentClientTier === "new") {
             voiceGuidelines = `
 ## CURRENT CLIENT PROFILE: Voice 4 — PREMIUM APP SUBSCRIBER
-- The client has subscribed/trialed your AI Coaching app (Weekly/Monthly/Yearly plan). She is NOT a community member yet, but she is paying for deep personal coaching.
-- Speak in a warm, direct, and intimate coaching tone (blend of Voice 2 and 3).
-- Focus fully on her real-time emotional processing, physical sensations (e.g. chest, throat), and mirror reflection.
-- You CAN and SHOULD use body awareness scans, deep breathing, and self-love affirmations.
-- Do NOT repeatedly push the free masterclass, Silver, or Gold Teachable course links (she is in the paid app container, not the community course dashboard). Focus on the present-moment coaching.
+- The client has subscribed to your standalone AI Coaching app. She is NOT a community member yet.
+- Focus on present-moment coaching (body scans, deep breathing, self-love affirmations).
+- **UPSELL TRIGGER**: If she struggles with consistency, wishes to understand self-love concepts deeply, or wants to heal her roots (rather than only reaching out during adversity), gently suggest joining the community:
+  * **Silver Membership**: (normally ₹9,999/year, but tell her: "Apply coupon code **aicoach** to get it for ₹6,999"). Link: https://learn.mirrormagicmovement.com/l/99cee80e7c
+  * **Gold Membership**: For deep root clearing (5 wealth roots & intensive Louise Hay mind-body journey). Link: https://learn.mirrormagicmovement.com/l/7efddec58f
+  * **1:1 Platinum / Deep Mentorship**: Suggest booking a free discovery call to connect directly with Honey: https://calendly.com/honey-vachhani/discoverycall
 - Keep responses within 2-4 sentences to stay conversational. End with one gentle question.
 `;
         } else {
@@ -1612,13 +1613,12 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
                     voiceGuidelines = `
 ## CURRENT CLIENT PROFILE: Voice 1 — FRESH LEAD (New to Mirror Magic)
 - The client is NEW. She does not know you deeply yet.
-- Keep your response warm, friendly, simple. Coffee shop vibe.
-- Kepp response extremely concise (2-4 sentences max).
-- NEVER use body awareness scans, deep ancestral/inner-child prompts, or complex definitions on this turn.
-- ALWAYS end your response with ONE clear, warm invitation.
-- Available program links to invite her to:
-  * Free Masterclass/Workshop: https://website.mirrormagicmethod.com/
-  * Silver Membership (starting point): https://learn.mirrormagicmovement.com/l/99cee80e7c
+- Keep your response warm, friendly, simple. Coffee shop vibe (2-4 sentences max).
+- **UPSELL TRIGGER**: Introduce them to the community when they express a desire to go deeper or make their healing practice consistent:
+  * **Silver Membership**: (normally ₹9,999/year, but tell her to apply coupon code **aicoach** to get it for ₹6,999). Link: https://learn.mirrormagicmovement.com/l/99cee80e7c
+  * **Gold Membership**: For deep root healing. Link: https://learn.mirrormagicmovement.com/l/7efddec58f
+  * **Discovery Call** (For Platinum 1:1): https://calendly.com/honey-vachhani/discoverycall
+- ALWAYS end your response with ONE clear, warm invitation or question.
 `;
                     break;
                 case "silver":
@@ -2317,7 +2317,7 @@ function updateLockState() {
                             Somatic & Metaphysical Mapping<br>
                             Daily Alignment & Reflection Logs
                         </div>
-                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                        <a href="https://learn.mirrormagicmovement.com/l/7ce4dedf16" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
                     
                     <!-- Quarterly Plan -->
@@ -2330,7 +2330,7 @@ function updateLockState() {
                             24/7 Unlimited AI Coach Access<br>
                             Somatic & Metaphysical Mapping
                         </div>
-                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                        <a href="https://learn.mirrormagicmovement.com/l/e3ecf4dd50" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
                     
                     <!-- Half-Yearly Plan -->
@@ -2343,7 +2343,7 @@ function updateLockState() {
                             24/7 Unlimited AI Coach Access<br>
                             Somatic & Metaphysical Mapping
                         </div>
-                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
+                        <a href="https://learn.mirrormagicmovement.com/l/a2fb41d4ce" target="_blank" class="pricing-card-btn secondary">${planBtnText}</a>
                     </div>
                     
                     <!-- Annual Plan (Recommended) -->
@@ -2358,7 +2358,7 @@ function updateLockState() {
                             Somatic & Metaphysical Mapping<br>
                             Daily Alignment & Reflection Logs
                         </div>
-                        <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
+                        <a href="https://learn.mirrormagicmovement.com/web/checkout/6a3527ceb7de6f41b26cd971" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
                     </div>
                 </div>
                 
@@ -3007,10 +3007,9 @@ function handleOfferResponse(choice) {
 Option A — Continue daily AI coaching
 ₹999 per month
 
-Option B — Annual AI Coaching + Silver Membership FREE
-₹7,777 per year
-(Silver Membership alone is worth ₹9,999)
-Annual link: https://learn.mirrormagicmovement.com/l/99cee80e7c
+Option B — Annual AI Coaching Plan
+₹7,777 per year (Save ₹4,211 compared to Monthly plan)
+Annual link: https://learn.mirrormagicmovement.com/web/checkout/6a3527ceb7de6f41b26cd971
 
 Let me know which option feels right for you, or we can keep speaking from the heart.`;
             addCoachMessage(offerDetails, []);
