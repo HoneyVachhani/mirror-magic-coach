@@ -762,6 +762,8 @@ let isAccessLocked = false;
 let selectedPlan = "month";
 let isAudioPlaying = false;
 let reflectionCount = 0; // Tracks alignment reflection saves to delay pricing modal
+let tempVerificationEmail = "";
+let isVerifyingOTP = false;
 
 // Setup Voice Guidance Audio File
 const voiceGuidanceAudio = new Audio("guidance.mp3");
@@ -1988,7 +1990,11 @@ const TRANSLATIONS = {
         btn_activate: "Activate / Login",
         
         lock_daily_title: "Honey AI Coach Locked",
-        lock_daily_desc: "Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach."
+        lock_daily_desc: "Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach.",
+        lock_otp_title: "Security Verification",
+        lock_otp_desc: "We've sent a 6-digit security code to your email. Enter it below to unlock the coach:",
+        btn_verify: "Verify Code",
+        btn_back: "Back / Change Email"
     },
     hi: {
         brand_title: "मिरर मैजिक कोच™",
@@ -2041,7 +2047,11 @@ const TRANSLATIONS = {
         btn_activate: "सक्रिय करें / लॉगिन करें",
         
         lock_daily_title: "हनी एआई कोच लॉक है",
-        lock_daily_desc: "हनी एआई कोच से व्यक्तिगत मार्गदर्शन अनलॉक करने के लिए पहले मध्य फलक में अपना दैनिक संरेखण प्रतिबिंब पूरा करें और अपनी प्रविष्टि सहेजें।"
+        lock_daily_desc: "हनी एआई कोच से व्यक्तिगत मार्गदर्शन अनलॉक करने के लिए पहले मध्य फलक में अपना दैनिक संरेखण प्रतिबिंब पूरा करें और अपनी प्रविष्टि सहेजें।",
+        lock_otp_title: "सुरक्षा सत्यापन",
+        lock_otp_desc: "हमने आपके ईमेल पर 6 अंकों का सुरक्षा कोड भेजा है। कोच को अनलॉक करने के लिए इसे नीचे दर्ज करें:",
+        btn_verify: "कोड सत्यापित करें",
+        btn_back: "वापस जाएं / ईमेल बदलें"
     }
 };
 
@@ -2246,6 +2256,24 @@ function updateLockState() {
     const userEmail = localStorage.getItem("mirror_user_email");
     const lang = localStorage.getItem("mirror_language") || "en";
     const t = TRANSLATIONS[lang];
+    
+    // 0. If OTP verification is in progress, show OTP form
+    if (isVerifyingOTP) {
+        lockOverlay.classList.remove("hidden");
+        lockOverlay.innerHTML = `
+            <div class="lock-card glass-panel" style="max-width: 400px; padding: 30px; text-align: center;">
+                <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔑</span>
+                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">${t.lock_otp_title}</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-text-secondary); line-height: 1.4;">${t.lock_otp_desc}<br><strong style="color:var(--color-primary);">${tempVerificationEmail}</strong></p>
+                <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+                    <input type="text" id="lock-otp-input" placeholder="6-digit code..." maxlength="6" style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--color-border-glass); background: #ffffff; color: #1C1C1E; font-size: 1.2rem; font-weight: bold; letter-spacing: 4px; text-align: center; outline: none; width: 100%; box-sizing: border-box;">
+                    <button class="btn btn-primary btn-block" onclick="verifyLockOTP()" style="padding: 12px; font-weight: 600;">${t.btn_verify}</button>
+                    <button class="btn btn-secondary btn-block" onclick="cancelOTPVerification()" style="padding: 10px; font-size: 0.85rem; background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer;">${t.btn_back}</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
     
     // 1. If email is not set, force registration
     if (!userEmail) {
@@ -2453,14 +2481,94 @@ async function submitLockEmail() {
         return;
     }
     
-    localStorage.setItem("mirror_user_email", emailVal);
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        alert("System error: Google Script URL not configured.");
+        return;
+    }
     
-    // Sync with referral input if present
-    const refEmailInput = document.getElementById("referral-email-input");
-    if (refEmailInput) refEmailInput.value = emailVal;
+    const originalBtnText = document.querySelector(".btn-block").textContent;
+    document.querySelector(".btn-block").textContent = "Sending code...";
+    document.querySelector(".btn-block").disabled = true;
     
-    await checkAccessStatus();
-    await updateReferralUI();
+    try {
+        const fetchUrl = `${scriptUrl}?action=sendOTP&email=${encodeURIComponent(emailVal)}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        
+        if (data && data.status === "success") {
+            tempVerificationEmail = emailVal;
+            isVerifyingOTP = true;
+            updateLockState();
+        } else {
+            alert(data.message || "Failed to send verification code. Please try again.");
+            document.querySelector(".btn-block").textContent = originalBtnText;
+            document.querySelector(".btn-block").disabled = false;
+        }
+    } catch(err) {
+        console.error("Failed to send OTP:", err);
+        alert("Error sending verification code. Please check your internet connection and try again.");
+        document.querySelector(".btn-block").textContent = originalBtnText;
+        document.querySelector(".btn-block").disabled = false;
+    }
+}
+
+async function verifyLockOTP() {
+    const otpInput = document.getElementById("lock-otp-input");
+    if (!otpInput) return;
+    
+    const otpVal = otpInput.value.trim();
+    if (otpVal.length !== 6 || isNaN(otpVal)) {
+        alert("Please enter a valid 6-digit security code.");
+        return;
+    }
+    
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        alert("System error: Google Script URL not configured.");
+        return;
+    }
+    
+    const verifyBtn = document.querySelector(".btn-primary");
+    const originalText = verifyBtn.textContent;
+    verifyBtn.textContent = "Verifying...";
+    verifyBtn.disabled = true;
+    
+    try {
+        const fetchUrl = `${scriptUrl}?action=verifyOTP&email=${encodeURIComponent(tempVerificationEmail)}&otp=${encodeURIComponent(otpVal)}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        
+        if (data && data.status === "success") {
+            // Save verified email
+            localStorage.setItem("mirror_user_email", tempVerificationEmail);
+            
+            // Sync with referral input if present
+            const refEmailInput = document.getElementById("referral-email-input");
+            if (refEmailInput) refEmailInput.value = tempVerificationEmail;
+            
+            isVerifyingOTP = false;
+            tempVerificationEmail = "";
+            
+            await checkAccessStatus();
+            await updateReferralUI();
+        } else {
+            alert(data.message || "Incorrect verification code. Please check and try again.");
+            verifyBtn.textContent = originalText;
+            verifyBtn.disabled = false;
+        }
+    } catch(err) {
+        console.error("Verification failed:", err);
+        alert("Failed to verify code. Please check connection and try again.");
+        verifyBtn.textContent = originalText;
+        verifyBtn.disabled = false;
+    }
+}
+
+function cancelOTPVerification() {
+    isVerifyingOTP = false;
+    tempVerificationEmail = "";
+    updateLockState();
 }
 
 function showSubscriptionModal() {
@@ -2850,6 +2958,8 @@ window.copyReferralLink = copyReferralLink;
 window.updateReferralUI = updateReferralUI;
 window.checkReferrerUrl = checkReferrerUrl;
 window.submitLockEmail = submitLockEmail;
+window.verifyLockOTP = verifyLockOTP;
+window.cancelOTPVerification = cancelOTPVerification;
 window.checkAccessStatus = checkAccessStatus;
 window.changeLanguage = changeLanguage;
 window.submitOnboardingForm = submitOnboardingForm;

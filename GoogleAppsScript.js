@@ -29,6 +29,74 @@ function doGet(e) {
     }
     
     email = email.trim().toLowerCase();
+    
+    // Action: Send OTP
+    if (action === "sendOTP") {
+      var code = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6 digit code
+      var props = PropertiesService.getScriptProperties();
+      var now = new Date().getTime();
+      props.setProperty("OTP_" + email, JSON.stringify({ code: code, expires: now + 10 * 60 * 1000 })); // 10 minutes expiry
+      
+      try {
+        MailApp.sendEmail({
+          to: email,
+          subject: "Your Mirror Magic Security Verification Code",
+          htmlBody: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 500px; border: 1px solid #e2e2e2; border-radius: 12px; background-color: #fffbf2;">
+              <h2 style="color: #b78c2d;">Mirror Magic Coach™</h2>
+              <p>Hello,</p>
+              <p>You requested a security verification code to access your Mirror Magic Coach account. Use this code to complete your login:</p>
+              <div style="font-size: 24px; font-weight: bold; text-align: center; padding: 15px; background: #ffffff; border: 2px solid #b78c2d; border-radius: 8px; color: #1c1c1e; letter-spacing: 2px; margin: 20px 0;">
+                ${code}
+              </div>
+              <p style="font-size: 12px; color: #666666;">This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+            </div>
+          `
+        });
+      } catch (err) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Failed to send email: " + err.toString() }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "OTP sent successfully" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Action: Verify OTP
+    if (action === "verifyOTP") {
+      var enteredOtp = e.parameter.otp;
+      if (!enteredOtp) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "OTP parameter is required" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var props = PropertiesService.getScriptProperties();
+      var storedDataStr = props.getProperty("OTP_" + email);
+      if (!storedDataStr) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No active verification request found or OTP expired" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var storedData = JSON.parse(storedDataStr);
+      var now = new Date().getTime();
+      
+      if (now > storedData.expires) {
+        props.deleteProperty("OTP_" + email);
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Verification code has expired. Please request a new one." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      if (storedData.code !== enteredOtp.trim()) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Incorrect verification code. Please try again." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      // Success: Delete the OTP so it cannot be reused
+      props.deleteProperty("OTP_" + email);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", verified: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     var ss = SpreadsheetApp.openById(SHEET_ID);
     
     // Ensure "Users" database sheet exists
