@@ -149,13 +149,15 @@ function doGet(e) {
       var trialStartDate = new Date(userRow[1]);
       var accessStatus = userRow[2].toString().trim().toLowerCase();
       var referralDaysAdded = parseInt(userRow[8] || 0, 10);
+      var name = userRow[4] || "";
       
       if (accessStatus === "purchased" || accessStatus === "silver" || accessStatus === "gold" || accessStatus === "diamond" || accessStatus === "platinum") {
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: false,
           daysLeft: 9999,
-          tier: accessStatus
+          tier: accessStatus,
+          name: name
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
@@ -166,12 +168,13 @@ function doGet(e) {
       // Total trial days = 7 + referralDaysAdded
       var totalTrialDays = 7 + referralDaysAdded;
       
-      if (accessStatus === "Trial" && daysPassed < totalTrialDays) {
+      if (accessStatus === "trial" && daysPassed < totalTrialDays) {
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: true,
           daysLeft: totalTrialDays - daysPassed,
-          tier: accessStatus
+          tier: accessStatus,
+          name: name
         })).setMimeType(ContentService.MimeType.JSON);
       } else {
         // Mark as Expired in sheet
@@ -180,7 +183,8 @@ function doGet(e) {
           status: "locked",
           isTrial: true,
           daysLeft: 0,
-          tier: "Expired"
+          tier: "Expired",
+          name: name
         })).setMimeType(ContentService.MimeType.JSON);
       }
     }

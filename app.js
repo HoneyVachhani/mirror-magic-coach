@@ -339,36 +339,21 @@ Signature phrases:
 
 ---
 
-## THE THREE VOICES — MANDATORY SYSTEM
+## THE THREE VOICES
 
-MANDATORY OPENING — every single conversation, no exceptions:
-Before ANY coaching, ANY story, ANY methodology, ANY program offer — ask this FIRST:
-"Are you new to Mirror Magic, or are you already part of our community?"
+The user has already been identified and greeted based on their membership level. Do NOT ask any onboarding or handshake questions.
 
-If community member: ask which level — Silver, Gold, Diamond or Platinum. Respond in appropriate voice.
-If new: respond as Voice 1. Keep first response to 2-3 lines MAXIMUM. End with a question.
+## VOICE 1 — FRESH LEAD (New/Trial to Mirror Magic)
 
-Note on verification: The AI cannot verify membership. Trust what the person says. The real value is in guiding them appropriately — and genuine members will self-identify correctly.
-
----
-
-## VOICE 1 — FRESH LEAD (New to Mirror Magic)
-
-REVISED FLOW FOR FIRST-TIMERS:
-
-Step 1: Mandatory opening question
-Step 2: She confirms she is new
-Step 3: Ask traffic source:
-"Lovely — and how did you find your way here? Instagram, YouTube, a friend, WhatsApp, LinkedIn, or did you search online?"
-Step 4: She shares her problem
-Step 5: Acknowledge warmly — 2-3 lines only
-Step 6: For MONEY issues — mention the 5 invisible roots to create curiosity
-Step 7: Recommend the relevant YouTube video
-Step 8: Invite to free masterclass
-Step 9: For money issues — offer ₹499 workshop
+When a new lead (Trial) shares their problem:
+1. Acknowledge warmly — 2-3 lines only.
+2. For MONEY issues — mention the 5 invisible roots to create curiosity.
+3. Recommend the relevant YouTube video.
+4. Invite to the free masterclass.
+5. For money issues — offer ₹499 workshop.
 
 MIRROR WORK IS NOT INTRODUCED TO FIRST-TIMERS.
-Mirror work begins only after she joins the community.
+Mirror work begins only after they join the community.
 
 Tone: Friendly, warm, simple. Like meeting someone at a coffee shop.
 
@@ -1129,124 +1114,51 @@ function initChatFlow() {
         return;
     }
     
-    // Fallback: clear and show greeting
+    // Clear and show waiting state
     chatMessagesContainer.innerHTML = "";
     conversationHistory = [];
-    isFirstHandshake = true;
+    isFirstHandshake = false;
     
-    // Add Honey's initial system greeting (Mandatory Opening)
-    addCoachMessage("Are you new to Mirror Magic, or are you already part of our community?", [
-        { label: "I am new here", action: () => selectClientRole("new") },
-        { label: "I am a community member", action: () => selectClientRole("member") }
-    ]);
+    const loader = document.createElement("div");
+    loader.id = "chat-initialization-loader";
+    loader.className = "message-wrapper coach";
+    loader.innerHTML = `<div class="message-bubble">Connecting to your Mirror Magic Coach...</div>`;
+    chatMessagesContainer.appendChild(loader);
 }
 
-function selectClientRole(role) {
-    if (role === "new") {
-        addUserMessage("I am new here.");
-        setClientTier("new");
-        
-        showTypingIndicator();
-        setTimeout(() => {
-            hideTypingIndicator();
-            addCoachMessage(
-                "Lovely — and how did you find your way here? Instagram, YouTube, a friend, WhatsApp, LinkedIn, or did you search online?",
-                [
-                    { label: "Instagram", action: () => selectTrafficSource("Instagram") },
-                    { label: "YouTube", action: () => selectTrafficSource("YouTube") },
-                    { label: "A Friend", action: () => selectTrafficSource("A friend") },
-                    { label: "WhatsApp", action: () => selectTrafficSource("WhatsApp") },
-                    { label: "LinkedIn", action: () => selectTrafficSource("LinkedIn") },
-                    { label: "Search Online", action: () => selectTrafficSource("Search online") }
-                ]
-            );
-        }, 1000);
-    } else if (role === "member") {
-        addUserMessage("I am already a community member.");
-        
-        showTypingIndicator();
-        setTimeout(() => {
-            hideTypingIndicator();
-            addCoachMessage("Welcome back. Which level is your membership?", [
-                { label: "Silver Membership", action: () => selectMemberLevel("silver") },
-                { label: "Gold Membership", action: () => selectMemberLevel("gold") },
-                { label: "Diamond Membership", action: () => selectMemberLevel("diamond") },
-                { label: "Platinum Membership", action: () => selectMemberLevel("platinum") }
-            ]);
-        }, 1000);
+function triggerInitialGreeting(tier, name) {
+    if (conversationHistory.length > 0) return; // Do not overwrite if history exists
+    
+    const loader = document.getElementById("chat-initialization-loader");
+    if (loader) {
+        loader.remove();
     }
-}
-
-function selectTrafficSource(source) {
-    addUserMessage(`I found you through ${source}.`);
-    clientTrafficSource = source;
     
-    showTypingIndicator();
-    setTimeout(() => {
-        hideTypingIndicator();
-        
-        const storedName = localStorage.getItem("mirror_user_name") || "friend";
-        userName = storedName;
-        isOnboardingNamePrompt = false;
-        isFirstHandshake = false;
-        
-        const finalGreeting = `Welcome ${userName}. Mirror Magic is a sacred space of coming back to yourself and realizing you are enough.\n\nWhat is the biggest challenge or dream you are carrying in your heart today? Let's talk.`;
-        addCoachMessage(finalGreeting);
-        
-        conversationHistory.push(
-            { role: "model", parts: [{ text: "Are you new to Mirror Magic, or are you already part of our community?" }] },
-            { role: "user", parts: [{ text: "I am new here." }] },
-            { role: "model", parts: [{ text: "Lovely — and how did you find your way here? Instagram, YouTube, a friend, WhatsApp, LinkedIn, or did you search online?" }] },
-            { role: "user", parts: [{ text: `I found you through ${source}.` }] },
-            { role: "model", parts: [{ text: finalGreeting }] }
-        );
-        
-        // Show daily alignment pane
-        document.getElementById("daily-alignment-container").classList.remove("hidden");
-        
-        // Lock the chat container for fresh leads
-        updateLockState();
-    }, 1000);
-}
-
-function selectMemberLevel(level) {
-    addUserMessage(`I am a ${level.charAt(0).toUpperCase() + level.slice(1)} member.`);
-    setClientTier(level);
+    const displayName = name || localStorage.getItem("mirror_user_name") || "friend";
     
-    showTypingIndicator();
-    setTimeout(() => {
-        hideTypingIndicator();
-        
-        const storedName = localStorage.getItem("mirror_user_name") || "friend";
-        userName = storedName;
-        isOnboardingNamePrompt = false;
-        isFirstHandshake = false;
-        
-        let finalGreeting = "";
-        if (level === "silver") {
-            finalGreeting = `It is beautiful to connect with you, ${userName}. I am glad you are here. How is your daily mirror work going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
-        } else if (level === "gold") {
-            finalGreeting = `It is beautiful to connect with you, ${userName}. I am glad you are here. How is your Money Mirror Sadhana™ going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
-        } else {
-            finalGreeting = `Welcome back, ${userName}. I am glad you are here. What deep identity shifts are we working on, or what are you becoming aware of inside your body right now? Speak raw and uncensored.`;
-        }
-        
-        addCoachMessage(finalGreeting);
-        
-        conversationHistory.push(
-            { role: "model", parts: [{ text: "Are you new to Mirror Magic, or are you already part of our community?" }] },
-            { role: "user", parts: [{ text: "I am already a community member." }] },
-            { role: "model", parts: [{ text: "Welcome back. Which level is your membership?" }] },
-            { role: "user", parts: [{ text: `I am a ${level.charAt(0).toUpperCase() + level.slice(1)} member.` }] },
-            { role: "model", parts: [{ text: finalGreeting }] }
-        );
-        
-        // Show daily alignment pane
-        document.getElementById("daily-alignment-container").classList.remove("hidden");
-        
-        // Update overlay states
-        updateLockState();
-    }, 1000);
+    let greeting = "";
+    const tierKey = (tier || "new").toLowerCase();
+    
+    if (tierKey === "silver") {
+        greeting = `It is beautiful to connect with you, ${displayName}. I am glad you are here. How is your daily mirror work going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
+    } else if (tierKey === "gold") {
+        greeting = `It is beautiful to connect with you, ${displayName}. I am glad you are here. How is your Money Mirror Sadhana™ going, or what pattern are we clearing from your space today? Let's bring it to the mirror.`;
+    } else if (tierKey === "diamond" || tierKey === "platinum") {
+        greeting = `Welcome back, ${displayName}. I am glad you are here. What deep identity shifts are we working on, or what are you becoming aware of inside your body right now? Speak raw and uncensored.`;
+    } else {
+        // Voice 1 - Fresh Lead / Trial
+        greeting = `Welcome ${displayName}. Mirror Magic is a sacred space of coming back to yourself and realizing you are enough.\n\nWhat is the biggest challenge or dream you are carrying in your heart today? Let's talk.`;
+    }
+    
+    addCoachMessage(greeting);
+    
+    conversationHistory.push({
+        role: "model",
+        parts: [{ text: greeting }]
+    });
+    
+    const dailyContainer = document.getElementById("daily-alignment-container");
+    if (dailyContainer) dailyContainer.classList.remove("hidden");
 }
 
 function setClientTier(tier) {
@@ -2388,7 +2300,8 @@ function showPromoBanner(daysLeft) {
         if (lang === "hi") {
             bannerDesc.innerHTML = `आपकी निःशुल्क परीक्षण अवधि में ${daysLeft} दिन शेष हैं! Honey AI Coach तक असीमित, 24/7 पहुंच के लिए वार्षिक योजना (₹7,777/वर्ष) में अपग्रेड करें और मासिक योजना की तुलना में ₹4,211 बचाएं!`;
         } else {
-            bannerDesc.innerHTML = `Only ${daysLeft} days remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) for unlimited, 24/7 access to your Honey AI Coach. Save ₹4,211 over the monthly plan!`;
+            const dayWord = daysLeft === 1 ? "day" : "days";
+            bannerDesc.innerHTML = `Only ${daysLeft} ${dayWord} remaining in your free trial! Upgrade to the Annual Plan (₹7,777/year) for unlimited, 24/7 access to your Honey AI Coach. Save ₹4,211 over the monthly plan!`;
         }
     } else {
         didOfferAppear = "No";
@@ -2637,6 +2550,10 @@ async function checkAccessStatus() {
         const data = await res.json();
         
         if (data) {
+            if (data.name) {
+                localStorage.setItem("mirror_user_name", data.name);
+                userName = data.name;
+            }
             if (data.tier) {
                 let tierKey = data.tier.toLowerCase();
                 if (tierKey === "trial" || tierKey === "expired" || tierKey === "purchased") {
@@ -2670,6 +2587,9 @@ async function checkAccessStatus() {
                     currentTrialDaysLeft = null;
                     showPromoBanner(0);
                 }
+                
+                // Automatically welcome the user with customized greeting for their tier if no history
+                triggerInitialGreeting(data.tier, data.name);
             }
             updateLockState();
         }
