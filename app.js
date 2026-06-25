@@ -800,6 +800,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (emailParam && statusParam === "registered") {
         const cleanEmail = emailParam.trim().toLowerCase();
         localStorage.setItem("mirror_user_email", cleanEmail);
+        
+        const nameParam = urlParams.get("name");
+        if (nameParam) {
+            const cleanName = decodeURIComponent(nameParam).trim();
+            localStorage.setItem("mirror_user_name", cleanName);
+            userName = cleanName;
+        }
+        
+        const phoneParam = urlParams.get("phone");
+        if (phoneParam) {
+            const cleanPhone = decodeURIComponent(phoneParam).trim();
+            localStorage.setItem("mirror_user_phone", cleanPhone);
+        }
+        
         isSubscribed = true;
         isAccessLocked = false;
         const onboardModal = document.getElementById("onboarding-modal");
