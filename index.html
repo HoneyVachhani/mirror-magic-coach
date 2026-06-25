@@ -261,6 +261,37 @@
                 </div>
             </div>
 
+            <!-- Daily Guidance Walkthrough Card -->
+            <div class="guidance-card glass-panel" style="margin-bottom: 20px; padding: 20px;">
+                <h3 id="guidance-title" style="font-family: var(--font-heading); color: var(--color-primary); font-size: 1.05rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                    ✨ How to complete your daily alignment:
+                </h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                    <!-- Video Embed Placeholder -->
+                    <div style="flex: 1; min-width: 250px; aspect-ratio: 16/9; background: #000000; border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border-glass); position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                        <!-- Placeholder Video Embed (Replace with your Youtube/Vimeo link when ready) -->
+                        <iframe id="guidance-video-iframe" width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Honey's Guidance Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
+                    <!-- Quick Steps List -->
+                    <div style="flex: 1.2; min-width: 250px; font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.5;">
+                        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+                            <li style="display: flex; gap: 10px; align-items: flex-start;">
+                                <span style="background: var(--color-primary); color: #ffffff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; margin-top: 2px;">1</span>
+                                <span id="guidance-step1">Click <strong>"Open Your Mirror"</strong> below to start your front camera. Look deep into your own eyes.</span>
+                            </li>
+                            <li style="display: flex; gap: 10px; align-items: flex-start;">
+                                <span style="background: var(--color-primary); color: #ffffff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; margin-top: 2px;">2</span>
+                                <span id="guidance-step2">Close your eyes, breathe, and scan your body. Feel where any stress or sensation is sitting.</span>
+                            </li>
+                            <li style="display: flex; gap: 10px; align-items: flex-start;">
+                                <span style="background: var(--color-primary); color: #ffffff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; margin-top: 2px;">3</span>
+                                <span id="guidance-step3">Type what came up in the 3 boxes below, then click <strong>"Save Reflection"</strong> to unlock your personal AI Coach.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <!-- Journal Form Card -->
             <div class="journal-form-card glass-panel">
                 <div class="journal-form" id="journal-fields-container">
@@ -299,7 +330,8 @@
                 <div class="coach-profile">
                     <div class="avatar-container">
                         <div class="avatar-status-ring"></div>
-                        <span class="coach-avatar">🪞</span>
+                        <img id="coach-avatar-img" src="honey.png" alt="Honey Vachhani" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1px solid var(--color-primary); display: block;" onerror="this.style.display='none'; document.getElementById('coach-avatar-placeholder').style.display='flex';">
+                        <span id="coach-avatar-placeholder" class="coach-avatar" style="display: none;">🪞</span>
                     </div>
                     <div class="coach-info">
                         <h2>Honey Vachhani</h2>
@@ -310,11 +342,14 @@
                     </div>
                 </div>
                 
-                <div class="client-context-selector" style="display: flex; gap: 8px; align-items: center;">
+                <div class="client-context-selector" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <select id="language-toggle" class="context-select" style="font-weight: 600;">
                         <option value="en">🌐 English</option>
                         <option value="hi">🌐 हिंदी / Hindi</option>
                     </select>
+                    
+                    <button id="btn-download-chat" class="btn btn-secondary" title="Download Chat History" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-border-glass); cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box;">📥 Download</button>
+                    <button id="btn-email-chat" class="btn btn-secondary" title="Email Chat History" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-border-glass); cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box;">📧 Email Me</button>
                     
                     <label for="client-tier" class="context-label">Membership:</label>
                     <select id="client-tier" class="context-select">
@@ -338,7 +373,7 @@
                     </div>
                 </div>
                 <div class="promo-actions">
-                    <a href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" id="promo-upgrade-link" class="promo-btn-upgrade">Upgrade</a>
+                    <a href="https://learn.mirrormagicmovement.com/web/checkout/6a3527ceb7de6f41b26cd971" target="_blank" id="promo-upgrade-link" class="promo-btn-upgrade">Upgrade</a>
                 </div>
             </div>
 
@@ -371,6 +406,7 @@
                     </button>
                 </div>
                 <form id="chat-input-form" class="chat-input-container">
+                    <button type="button" class="btn-mic" id="btn-mic-chat" onclick="toggleSpeechToText('user-input', 'btn-mic-chat')" title="Dictate message with your voice" style="position: static; margin: 0 4px 0 0; flex-shrink: 0; background: rgba(183, 140, 45, 0.08); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--color-border-glass); cursor: pointer; font-size: 1rem;">🎙️</button>
                     <textarea 
                         id="user-input" 
                         placeholder="Share what is in your heart... (e.g. 'I am feeling overwhelmed')" 

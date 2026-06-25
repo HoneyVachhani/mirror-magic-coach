@@ -764,12 +764,27 @@ let isAudioPlaying = false;
 let reflectionCount = 0; // Tracks alignment reflection saves to delay pricing modal
 let tempVerificationEmail = "";
 let isVerifyingOTP = false;
+let isSavingReflection = false;
+let currentSessionId = "";
+
 
 // Setup Voice Guidance Audio File
 const voiceGuidanceAudio = new Audio("guidance.mp3");
 
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize or load session ID
+    try {
+        let sessId = sessionStorage.getItem("mirror_session_id");
+        if (!sessId) {
+            sessId = "sess_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+            sessionStorage.setItem("mirror_session_id", sessId);
+        }
+        currentSessionId = sessId;
+    } catch(e) {
+        currentSessionId = "sess_" + Date.now();
+    }
+
     // Check if redirected back from Tagmango checkout with success parameter
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("subscribed") === "true") {
@@ -823,6 +838,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (langSelect) {
         langSelect.addEventListener("change", (e) => {
             changeLanguage(e.target.value);
+        });
+    }
+    
+    // Hook up download chat listener
+    const btnDownloadChat = document.getElementById("btn-download-chat");
+    if (btnDownloadChat) {
+        btnDownloadChat.addEventListener("click", () => {
+            downloadChatHistory();
+        });
+    }
+    
+    // Hook up email chat listener
+    const btnEmailChat = document.getElementById("btn-email-chat");
+    if (btnEmailChat) {
+        btnEmailChat.addEventListener("click", () => {
+            emailChatHistory();
         });
     }
     
@@ -1014,6 +1045,8 @@ function setupEventListeners() {
 
     // Save Journal click handler
     btnSaveJournal.addEventListener("click", async () => {
+        if (isSavingReflection) return;
+        
         const feelVal = document.getElementById("journal-feel").value.trim();
         const thinkVal = document.getElementById("journal-think").value.trim();
         const bodyVal = document.getElementById("journal-body").value.trim();
@@ -1023,41 +1056,69 @@ function setupEventListeners() {
             return;
         }
 
-        // Increment reflection counter and persist it
-        reflectionCount++;
+        isSavingReflection = true;
+        btnSaveJournal.disabled = true;
+        const originalText = btnSaveJournal.textContent;
+        btnSaveJournal.textContent = "Saving...";
+
         try {
-            localStorage.setItem("reflection_count", reflectionCount.toString());
-            localStorage.setItem("last_reflection_date", new Date().toDateString());
-        } catch(e) {}
+            // Increment reflection counter and persist it
+            reflectionCount++;
+            try {
+                localStorage.setItem("reflection_count", reflectionCount.toString());
+                localStorage.setItem("last_reflection_date", new Date().toDateString());
+            } catch(e) {}
 
-        // Check trial and subscription access status
-        await checkAccessStatus();
+            // Check trial and subscription access status
+            await checkAccessStatus();
 
-        // Update referral UI immediately to reflect the first completed session / trigger visibility
-        await updateReferralUI();
+            // Update referral UI immediately to reflect the first completed session / trigger visibility
+            await updateReferralUI();
 
-        // Clear reflection fields for next session
-        document.getElementById("journal-feel").value = "";
-        document.getElementById("journal-think").value = "";
-        document.getElementById("journal-body").value = "";
+            // Clear reflection fields for next session
+            document.getElementById("journal-feel").value = "";
+            document.getElementById("journal-think").value = "";
+            document.getElementById("journal-body").value = "";
 
-        // Log the reflection event inside the current chat timeline
-        addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
+            // Log the reflection event inside the current chat timeline
+            addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
 
-        // Free alignment path: instantly unlock coach if access is not locked
-        if (!isAccessLocked) {
-            isSubscribed = true;
+            // Free alignment path: instantly unlock coach if access is not locked
+            if (!isAccessLocked) {
+                isSubscribed = true;
+            }
+            updateLockState();
+            addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
+            
+            // Immediate background sync to Google Sheets to mark First Reflection Completed = TRUE
+            saveConversationToGoogleSheets();
+            
+            switchMobileTab("coach");
+            userInputField.focus();
+        } catch(err) {
+            console.error("Error saving reflection:", err);
+        } finally {
+            btnSaveJournal.disabled = false;
+            btnSaveJournal.textContent = originalText;
+            isSavingReflection = false;
         }
-        updateLockState();
-        addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
-        switchMobileTab("coach");
-        userInputField.focus();
     });
 }
 
 // --- Chat Flow & Handshake Management ---
 function initChatFlow() {
-    clearChatHistory();
+    // Attempt to load existing local chat history
+    const loaded = loadLocalChatHistory();
+    if (loaded) {
+        // If history exists, skip handshake and directly update locks
+        updateLockState();
+        return;
+    }
+    
+    // Fallback: clear and show greeting
+    chatMessagesContainer.innerHTML = "";
+    conversationHistory = [];
+    isFirstHandshake = true;
     
     // Add Honey's initial system greeting (Mandatory Opening)
     addCoachMessage("Are you new to Mirror Magic, or are you already part of our community?", [
@@ -1184,13 +1245,70 @@ function setClientTier(tier) {
 }
 
 // --- DOM Rendering Utilities ---
+function saveLocalChatHistory(role, text) {
+    try {
+        let history = JSON.parse(localStorage.getItem("mirror_chat_history") || "[]");
+        history.push({ role, text, timestamp: getFormattedTime() });
+        localStorage.setItem("mirror_chat_history", JSON.stringify(history));
+    } catch(e) {
+        console.warn("Could not save chat history locally:", e);
+    }
+}
+
+function loadLocalChatHistory() {
+    try {
+        const history = JSON.parse(localStorage.getItem("mirror_chat_history") || "[]");
+        if (history.length > 0) {
+            chatMessagesContainer.innerHTML = "";
+            isFirstHandshake = false;
+            
+            history.forEach(msg => {
+                const wrapper = document.createElement("div");
+                wrapper.className = `message-wrapper ${msg.role}`;
+                
+                const bubble = document.createElement("div");
+                bubble.className = "message-bubble";
+                if (msg.role === "user") {
+                    bubble.textContent = msg.text;
+                } else {
+                    bubble.innerHTML = formatMessageText(msg.text);
+                }
+                
+                const meta = document.createElement("div");
+                meta.className = "message-meta";
+                meta.textContent = msg.timestamp || getFormattedTime();
+                
+                wrapper.appendChild(bubble);
+                wrapper.appendChild(meta);
+                chatMessagesContainer.appendChild(wrapper);
+                
+                // Hydrate model context for subsequent prompts
+                conversationHistory.push({
+                    role: msg.role === "user" ? "user" : "model",
+                    parts: [{ text: msg.text }]
+                });
+            });
+            scrollToBottom();
+            return true;
+        }
+    } catch(e) {
+        console.warn("Could not load chat history locally:", e);
+    }
+    return false;
+}
+
 function clearChatHistory() {
     chatMessagesContainer.innerHTML = "";
     conversationHistory = [];
     isFirstHandshake = true;
+    try {
+        localStorage.removeItem("mirror_chat_history");
+    } catch(e) {}
 }
 
 function addUserMessage(text) {
+    saveLocalChatHistory("user", text);
+
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper user";
     
@@ -1209,6 +1327,8 @@ function addUserMessage(text) {
 }
 
 function addCoachMessage(text, options = []) {
+    saveLocalChatHistory("coach", text);
+
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper coach";
     
@@ -1864,6 +1984,81 @@ The output MUST be a valid JSON object matching this structure exactly (no other
     };
 }
 
+function downloadChatHistory() {
+    const userEmail = localStorage.getItem("mirror_user_email") || "user";
+    if (conversationHistory.length === 0) {
+        alert("There is no conversation history to download yet.");
+        return;
+    }
+    const transcript = conversationHistory.map(msg => {
+        const roleName = msg.role === "user" ? (userName || "User") : "Honey Vachhani";
+        const text = msg.parts && msg.parts[0] ? msg.parts[0].text : "";
+        return `[${roleName}]: ${text}`;
+    }).join("\n\n");
+    
+    const blob = new Blob([transcript], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Mirror_Magic_Chat_${userEmail.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+async function emailChatHistory() {
+    const userEmail = localStorage.getItem("mirror_user_email");
+    if (!userEmail) {
+        alert("Please complete registration to email your transcript.");
+        return;
+    }
+    if (conversationHistory.length === 0) {
+        alert("There is no conversation history to email yet.");
+        return;
+    }
+    
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) {
+        alert("Email server is not configured yet.");
+        return;
+    }
+    
+    const transcript = conversationHistory.map(msg => {
+        const roleName = msg.role === "user" ? (userName || "User") : "Honey Vachhani";
+        const text = msg.parts && msg.parts[0] ? msg.parts[0].text : "";
+        return `[${roleName}]: ${text}`;
+    }).join("\n\n");
+    
+    const btn = document.getElementById("btn-email-chat");
+    const originalText = btn.textContent;
+    btn.textContent = "Sending...";
+    btn.disabled = true;
+    
+    try {
+        await fetch(scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                action: "emailTranscript",
+                email: userEmail,
+                transcript: transcript
+            })
+        });
+        
+        alert(`Success! A copy of your session history has been requested for: ${userEmail}`);
+    } catch(err) {
+        console.error("Email transcript failed:", err);
+        alert("Failed to send email. Please check your connection and try again.");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
 async function saveConversationToGoogleSheets() {
     const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
     if (!scriptUrl || scriptUrl.includes("exec") === false) {
@@ -1916,7 +2111,8 @@ async function saveConversationToGoogleSheets() {
             trialDay: trialDayStr,
             didOfferAppear: didOfferAppear,
             offerResponse: userOfferResponse,
-            transcript: transcript
+            transcript: transcript,
+            sessionId: currentSessionId
         };
         
         console.log("Sending conversation log to Google Sheets...", payload);
@@ -2281,12 +2477,10 @@ function updateLockState() {
         lockOverlay.innerHTML = `
             <div class="lock-card glass-panel" style="max-width: 400px; padding: 30px; text-align: center;">
                 <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🔒</span>
-                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">${t.lock_email_title}</h3>
-                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-text-secondary); line-height: 1.4;">${t.lock_email_desc}</p>
-                <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
-                    <input type="email" id="lock-email-input" placeholder="Enter your email..." style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--color-border-glass); background: #ffffff; color: #1C1C1E; font-size: 0.95rem; text-align: center; outline: none; width: 100%; box-sizing: border-box;">
-                    <button class="btn btn-primary btn-block" onclick="submitLockEmail()" style="padding: 12px; font-weight: 600;">${t.btn_activate}</button>
-                </div>
+                <h3 style="margin-bottom: 10px; color: var(--color-text-primary); font-family: var(--font-heading);">${lang === "hi" ? "कोच लॉक है" : "Honey AI Coach Locked"}</h3>
+                <p style="font-size: 0.95rem; color: var(--color-text-secondary); line-height: 1.4; font-weight: 500;">
+                    ${lang === "hi" ? "कृपया एआई कोच को अनलॉक करने के लिए पहले स्वागत फॉर्म पूरा करें।" : "Please complete the welcome registration form to unlock Honey's AI Coach."}
+                </p>
             </div>
         `;
         return;
@@ -2696,7 +2890,7 @@ function toggleSpeechToText(targetFieldId, micButtonId) {
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-        alert("Your browser does not support voice dictation. Please try using Google Chrome or Safari.");
+        alert("Your current mobile browser view does not support voice recording.\n\n👉 If you opened this link from inside WhatsApp, Instagram, or Facebook, please tap the three dots or share icon and select 'Open in Safari' or 'Open in Chrome' to use voice recording.");
         return;
     }
     
@@ -2721,9 +2915,13 @@ function toggleSpeechToText(targetFieldId, micButtonId) {
     }
     
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Capture one clear phrase at a time
-    recognition.interimResults = false;
-    recognition.lang = "en-IN"; // Support English with Indian pronunciation defaults, handles Hindi terms too
+    recognition.continuous = true; // Keep recording during pauses
+    recognition.interimResults = true; // Show words as they are being spoken
+    
+    const currentLang = localStorage.getItem("mirror_language") || "en";
+    recognition.lang = currentLang === "hi" ? "hi-IN" : "en-IN"; // Support English with Indian defaults or full Hindi
+    
+    let finalTranscript = "";
     
     recognition.onstart = () => {
         activeRecognition = recognition;
@@ -2733,19 +2931,24 @@ function toggleSpeechToText(targetFieldId, micButtonId) {
     };
     
     recognition.onresult = (event) => {
-        const transcriptText = event.results[0][0].transcript;
-        
-        // Clean and overwrite with fresh voice input instead of appending to avoid repeating duplicates
-        targetField.value = transcriptText;
-        
-        // Trigger input event to update autosize properties if any
+        let interimTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + " ";
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        targetField.value = (finalTranscript + interimTranscript).trim();
         targetField.dispatchEvent(new Event('input', { bubbles: true }));
     };
     
     recognition.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         if (event.error === 'not-allowed') {
-            alert("Microphone permission denied. Please allow microphone access in your browser settings.");
+            alert("Microphone permission denied.\n\n👉 If you are using WhatsApp or Instagram, please open the link in Safari or Google Chrome to grant microphone permissions correctly.");
+        } else if (event.error === 'network') {
+            alert("Voice recording requires an active internet connection. Please check your signal and try again.");
         }
     };
     

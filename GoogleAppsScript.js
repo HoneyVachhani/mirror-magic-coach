@@ -224,6 +224,24 @@ function doPost(e) {
     var data = JSON.parse(rawContent);
     var ss = SpreadsheetApp.openById(SHEET_ID);
     
+    // Check if the POST is an email transcript action
+    if (data.action === "emailTranscript") {
+      var email = data.email || "";
+      var transcript = data.transcript || "";
+      if (email && transcript) {
+        MailApp.sendEmail({
+          to: email,
+          subject: "Your Mirror Magic Coach™ Conversation History",
+          body: "Hello,\n\nHere is a copy of your session conversation history with Honey's AI Coach:\n\n" + transcript + "\n\nWarm regards,\nHoney Vachhani & The Mirror Magic Team"
+        });
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Email sent" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing email or transcript" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    
     // Check if the POST is a TagMango payment webhook confirmation
     if (data.event && (data.event === "payment.successful" || data.event === "order.created.completed")) {
       var customerEmail = "";
@@ -295,7 +313,7 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     
-    // Standard Conversation Log Append
+    // Standard Conversation Log Append or Update
     var sheet = ss.getSheetByName("ConversationLogs");
     if (!sheet) {
       sheet = ss.insertSheet("ConversationLogs");
@@ -312,12 +330,26 @@ function doPost(e) {
         "Trial Day Number", 
         "Did Offer Appear?", 
         "User Response to Offer", 
-        "Full Conversation Transcript"
+        "Full Conversation Transcript",
+        "Session ID"
       ]);
-      sheet.getRange("A1:J1").setFontWeight("bold");
+      sheet.getRange("A1:K1").setFontWeight("bold");
     }
     
-    sheet.appendRow([
+    var sessionId = data.sessionId || "";
+    var foundRowIndex = -1;
+    
+    if (sessionId) {
+      var values = sheet.getDataRange().getValues();
+      for (var i = 1; i < values.length; i++) {
+        if (values[i][10] && values[i][10].toString().trim() === sessionId.toString().trim()) {
+          foundRowIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    var rowData = [
       data.timestampIST || "",
       data.name || "",
       data.email || "",
@@ -327,8 +359,15 @@ function doPost(e) {
       data.trialDay || "",
       data.didOfferAppear || "",
       data.offerResponse || "",
-      data.transcript || ""
-    ]);
+      data.transcript || "",
+      sessionId
+    ];
+    
+    if (foundRowIndex > -1) {
+      sheet.getRange(foundRowIndex, 1, 1, rowData.length).setValues([rowData]);
+    } else {
+      sheet.appendRow(rowData);
+    }
     
     // Update referred status when first reflection completed
     var usersSheet = ss.getSheetByName("Users");
