@@ -147,10 +147,10 @@ function doGet(e) {
       
       var userRow = data[userRowIndex - 1];
       var trialStartDate = new Date(userRow[1]);
-      var accessStatus = userRow[2].toString().trim();
+      var accessStatus = userRow[2].toString().trim().toLowerCase();
       var referralDaysAdded = parseInt(userRow[8] || 0, 10);
       
-      if (accessStatus === "Purchased" || accessStatus === "silver" || accessStatus === "gold" || accessStatus === "diamond" || accessStatus === "platinum") {
+      if (accessStatus === "purchased" || accessStatus === "silver" || accessStatus === "gold" || accessStatus === "diamond" || accessStatus === "platinum") {
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: false,
