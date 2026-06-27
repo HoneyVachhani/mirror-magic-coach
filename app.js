@@ -869,6 +869,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     
+    // Hook up reset quiz listener
+    const btnResetQuiz = document.getElementById("btn-reset-quiz");
+    if (btnResetQuiz) {
+        btnResetQuiz.addEventListener("click", () => {
+            if (confirm("This will clear your current chat history and let you retake the assessment. Proceed?")) {
+                localStorage.removeItem("mirror_chat_history");
+                clearChatHistory();
+                
+                // Show quiz overlay again
+                const overlay = document.getElementById("quiz-overlay");
+                if (overlay) {
+                    overlay.classList.remove("fade-out");
+                    
+                    // Reset screens
+                    document.getElementById("screen-challenge").classList.remove("hidden");
+                    document.getElementById("screen-questions").classList.add("hidden");
+                    document.getElementById("screen-loading").classList.add("hidden");
+                    document.getElementById("screen-results").classList.add("hidden");
+                    document.getElementById("quiz-progress-container").classList.add("hidden");
+                }
+            }
+        });
+    }
+    
     // Load default or saved language
     const savedLang = localStorage.getItem("mirror_language") || "en";
     changeLanguage(savedLang);
