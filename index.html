@@ -75,6 +75,107 @@
         </div>
     </div>
 
+    <!-- Onboarding Assessment Quiz Overlay -->
+    <div id="quiz-overlay" class="quiz-overlay">
+        <div class="quiz-modal glass-panel">
+            <!-- Progress indicator -->
+            <div id="quiz-progress-container" class="quiz-progress-container hidden">
+                <div class="quiz-progress-bar">
+                    <div id="quiz-progress-fill" class="quiz-progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="quiz-step-text" class="quiz-step-text">Question 1 of 5</div>
+            </div>
+
+            <!-- Quiz Screen: Challenge Selection -->
+            <div id="screen-challenge" class="quiz-screen active">
+                <div class="spiritual-badge">MIRROR MAGIC ASSESSMENT</div>
+                <h2>What area of your life is currently in a Contracted State?</h2>
+                <p class="subtitle">Select the challenge that is speaking loudest to your heart today.</p>
+                <div class="challenge-grid">
+                    <button class="btn-challenge" data-challenge="money">
+                        <span class="challenge-icon">💰</span>
+                        <span class="challenge-title">Money & Business</span>
+                        <span class="challenge-desc">Unblocking cashflow & the 5 Wealth Roots</span>
+                    </button>
+                    <button class="btn-challenge" data-challenge="relationships">
+                        <span class="challenge-icon">🌸</span>
+                        <span class="challenge-title">Relationships & Family</span>
+                        <span class="challenge-desc">Clearing parental & lineage Mirror Inheritance</span>
+                    </button>
+                    <button class="btn-challenge" data-challenge="self-worth">
+                        <span class="challenge-icon">🧘</span>
+                        <span class="challenge-title">Self-Worth & Womb</span>
+                        <span class="challenge-desc">Healing inner-child wounds & self-criticism</span>
+                    </button>
+                    <button class="btn-challenge" data-challenge="health">
+                        <span class="challenge-icon">⚡</span>
+                        <span class="challenge-title">Energy & Somatic</span>
+                        <span class="challenge-desc">Clearing physical contractions & vital blockages</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz Screen: Dynamic Questions -->
+            <div id="screen-questions" class="quiz-screen hidden">
+                <h3 id="question-text">Dynamic Question Text</h3>
+                <div id="options-container" class="options-vertical-grid">
+                    <!-- Buttons will render dynamically -->
+                </div>
+            </div>
+
+            <!-- Quiz Screen: Loading / Analyzing -->
+            <div id="screen-loading" class="quiz-screen hidden">
+                <div class="quiz-loader">
+                    <div class="loader-ring"></div>
+                    <div class="loader-orb"></div>
+                </div>
+                <h3>Mapping Consciousness Patterns</h3>
+                <p id="loading-status-text">Analyzing somatic responses...</p>
+            </div>
+
+            <!-- Quiz Screen: Results & Diagnostics -->
+            <div id="screen-results" class="quiz-screen hidden">
+                <div class="spiritual-badge">DIAGNOSTIC REPORT</div>
+                <h2 id="result-block-title">Your Blockage</h2>
+                
+                <div class="diagnostic-box">
+                    <div class="diagnosis-header">
+                        <span class="diagnosis-badge-icon">🔍</span>
+                        <h4 id="result-block-type">Womb Wealth Root</h4>
+                    </div>
+                    <p id="result-description" class="diagnosis-text">Custom analysis of your responses...</p>
+                </div>
+
+                <!-- Call to Actions -->
+                <div class="quiz-cta-container">
+                    <!-- Low Ticket Direct Purchase -->
+                    <div id="cta-low-ticket" class="cta-card hidden">
+                        <h5>Foundational Clearing</h5>
+                        <p>To begin clearing this block daily in a structured container, we recommend starting your Silver Membership today.</p>
+                        <a id="link-silver-checkout" href="https://learn.mirrormagicmovement.com/l/99cee80e7c" target="_blank" class="btn btn-secondary">
+                            Join Silver Membership (₹5,999/yr)
+                        </a>
+                    </div>
+
+                    <!-- High Ticket Call Booking -->
+                    <div id="cta-high-ticket" class="cta-card hidden">
+                        <h5>1:1 Deep Ancestral Clearing</h5>
+                        <p>Lineage blocks of this depth require active, custom energy clearing with Honey Vachhani. Book a private 1:1 consultation call.</p>
+                        <a id="link-calendly-booking" href="https://calendly.com/honey-vachhani/discoverycall" target="_blank" class="btn btn-primary">
+                            Book 1:1 Discovery Call (Free)
+                        </a>
+                    </div>
+                </div>
+
+                <div class="quiz-footer-actions">
+                    <button id="btn-proceed-coaching" class="btn btn-tertiary">
+                        ✨ Proceed to AI Coach Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Mobile Tab Navigation (Only visible on mobile) -->
         <nav class="mobile-tabs-nav" id="mobile-tabs">
@@ -429,6 +530,6 @@
 
 
     <!-- JavaScript Bundle -->
-    <script src="app.js?v=4.2"></script>
+    <script src="app.js?v=5.0"></script>
 </body>
 </html>

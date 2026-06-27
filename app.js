@@ -822,7 +822,20 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("localStorage not accessible:", e);
     }
 
-    initChatFlow();
+    // Check if we should show the quiz or load history
+    let hasHistory = false;
+    try {
+        hasHistory = loadLocalChatHistory();
+    } catch(e) {
+        console.warn("Error loading history:", e);
+    }
+    
+    if (hasHistory) {
+        const quizOverlay = document.getElementById("quiz-overlay");
+        if (quizOverlay) quizOverlay.classList.add("fade-out");
+    } else {
+        initQuizOverlay();
+    }
     setupEventListeners();
     
     // Check trial and subscription access status
@@ -1659,12 +1672,12 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
                     voiceGuidelines = `
 ## CURRENT CLIENT PROFILE: Voice 1 — FRESH LEAD (New to Mirror Magic)
 - The client is NEW. She does not know you deeply yet.
-- Keep your response warm, friendly, simple. Coffee shop vibe (2-4 sentences max).
-- **UPSELL TRIGGER**: Introduce them to the community when they express a desire to go deeper or make their healing practice consistent:
-  * **Silver Membership**: (normally ₹9,999/year, but tell her to apply coupon code **aicoach** to get it for ₹6,999). Link: https://learn.mirrormagicmovement.com/l/99cee80e7c
-  * **Gold Membership**: For deep root healing. Link: https://learn.mirrormagicmovement.com/l/7efddec58f
-  * **Discovery Call** (For Platinum 1:1): https://calendly.com/honey-vachhani/discoverycall
-- ALWAYS end your response with ONE clear, warm invitation or question.
+- Keep your response warm, friendly, and simple (coffee shop vibe).
+- Keep response extremely concise (2-4 sentences max).
+- If she wants to start her self-love journey with a structured program, pitch the Silver Membership (₹5,000 - ₹6,000 INR) directly.
+- Direct Purchase Link: https://learn.mirrormagicmovement.com/l/99cee80e7c
+- If she describes a deep, heavy life/lineage block and wants private, customized mentorship, invite her to a 1:1 Discovery Call to discuss a premium container (₹1 - 2 Lakhs+ INR).
+- Discovery Call Booking Link: https://calendly.com/honey-vachhani/discoverycall
 `;
                     break;
                 case "silver":
@@ -1672,11 +1685,12 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
                     voiceGuidelines = `
 ## CURRENT CLIENT PROFILE: Voice 2 — SILVER/GOLD COMMUNITY MEMBER
 - The client is an active community member. She knows the language (Pillars, Secrets, Money Mirror Sadhana, etc.).
-- Guide her through the Mirror Magic Method. Remind her of tools (mirror, body scan, breathing).
-- Keep tone as a warm, encouraging but firm teacher.
-- If she seems ready for a deeper shift, offer the upgrade pathway:
-  * Silver -> Gold: Heal Your Life, Louise Hay work. Link: https://learn.mirrormagicmovement.com/l/7efddec58f
-  * Gold -> Diamond: Deep identity shifts. Link: https://learn.mirrormagicmovement.com/l/d808959c03
+- Guide her through the Mirror Magic Method (mirror gaze, body scan, breathing).
+- Keep the tone as a warm, encouraging, but firm teacher.
+- If she is struggling with deep, persistent blocks (the 5 Wealth Roots, lineage/Mirror Inheritance) and desires customized guidance, qualify her and invite her to book a 1:1 Discovery Call to explore a high-ticket container (₹1 - 2 Lakhs+ INR).
+- Discovery Call Booking Link: https://calendly.com/honey-vachhani/discoverycall
+- If she is not ready for high-ticket and wants to upgrade/continue her group membership pathway, offer the Gold upgrade:
+  * Gold Membership: https://learn.mirrormagicmovement.com/l/7efddec58f
 `;
                     break;
                 case "diamond":
@@ -1685,9 +1699,9 @@ Are you attending your Platinum sessions with Honey? This work needs her direct 
 ## CURRENT CLIENT PROFILE: Voice 3 — DIAMOND/PLATINUM MEMBER
 - The client is a long-term student doing deep identity work.
 - Use Voice 3: intimate, direct, spiritually grounded. Speak from the heart, one-on-one.
-- Hold the client accountable to their highest identity (Original Divine Self). Do not offer cheap comfort. Reflect patterns back.
-- If she needs a personal container, offer the Platinum upgrade:
-  * Diamond/Group -> Platinum: 1:1 Year Coaching with Honey. enquiry link: https://calendly.com/honey-vachhani/discoverycall
+- Hold her accountable to her highest identity (The Source Woman). Do not offer cheap comfort. Reflect patterns back.
+- Since she is at the highest tier, actively encourage booking/scheduling her 1:1 year coaching sessions or custom containers (₹1 - 2 Lakhs+ INR minimum).
+- Inquiry & Booking link: https://calendly.com/honey-vachhani/discoverycall
 `;
                     break;
                 default:
@@ -3164,6 +3178,388 @@ Let me know which option feels right for you, or we can keep speaking from the h
 
 // Expose handleOfferResponse to window scope
 window.handleOfferResponse = handleOfferResponse;
+
+
+// ==========================================================================
+// DYNAMIC ASSESSMENT QUIZ FUNNEL LOGIC
+// ==========================================================================
+
+// --- Dynamic Quiz Database ---
+const QUIZ_QUESTIONS = {
+    money: [
+        {
+            question: "When you think about paying your bills or your bank balance, where does your body contract?",
+            options: [
+                { text: "Tightness in my chest / hard to breathe", score: "anxiety" },
+                { text: "A heavy weight on my shoulders", score: "ancestral" },
+                { text: "A knot or hollow feeling in my stomach", score: "survival" },
+                { text: "Numbness / I feel disconnected from my body", score: "disconnection" }
+            ]
+        },
+        {
+            question: "Describe your father's relationship with money. Did you inherit a belief that money is hard to earn or runs out quickly?",
+            options: [
+                { text: "Yes, fully - I carry that exact worry", score: "father_root" },
+                { text: "Somewhat - I struggle to break past it", score: "father_root" },
+                { text: "No, he was abundant or supportive", score: "other" },
+                { text: "I'm not sure / he was absent", score: "ancestral" }
+            ]
+        },
+        {
+            question: "When someone pays you or offers you abundance, do you feel uncomfortable or try to minimize it?",
+            options: [
+                { text: "Yes, I feel guilty or like I don't deserve it", score: "receiving" },
+                { text: "I feel uneasy or want to return the favor immediately", score: "receiving" },
+                { text: "No, I receive easily and with gratitude", score: "abundant" }
+            ]
+        },
+        {
+            question: "If your wealth blocks were completely cleared, what is the minimum monthly income your identity is ready to receive?",
+            options: [
+                { text: "₹50,000 – ₹1 Lakh", score: "silver_tier" },
+                { text: "₹1 Lakh – ₹3 Lakhs", score: "silver_tier" },
+                { text: "₹3 Lakhs – ₹5 Lakhs+", score: "platinum_tier" }
+            ]
+        }
+    ],
+    relationships: [
+        {
+            question: "Look at your parents' relationship. Are you repeating their arguments, distance, or boundary struggles in your own partnership?",
+            options: [
+                { text: "Yes, it is almost identical", score: "lineage" },
+                { text: "I actively try to do the opposite, but I feel blocked", score: "lineage" },
+                { text: "No, my dynamics are completely different", score: "other" }
+            ]
+        },
+        {
+            question: "When a conflict happens, what is your somatic response?",
+            options: [
+                { text: "I shut down, freeze, and stay quiet", score: "freeze" },
+                { text: "I get angry, defensive, and fight", score: "fight" },
+                { text: "I anxious-please or apologize to keep the peace", score: "please" }
+            ]
+        },
+        {
+            question: "What is the main pattern you see reflected in your relationships?",
+            options: [
+                { text: "I feel taken for granted / I do all the work", score: "boundary" },
+                { text: "I fear abandonment and need reassurance", score: "abandonment" },
+                { text: "I feel suffocated or have a hard time opening up", score: "avoidant" }
+            ]
+        },
+        {
+            question: "How deep are you willing to go to clear these lineage hand-me-downs?",
+            options: [
+                { text: "I want a daily self-healing structure", score: "silver_tier" },
+                { text: "I need deep, customized 1-on-1 clearing of my roots", score: "platinum_tier" }
+            ]
+        }
+    ],
+    "self-worth": [
+        {
+            question: "When you look directly into your own eyes in the mirror for 10 seconds, what happens?",
+            options: [
+                { text: "I feel highly uncomfortable and want to look away", score: "disconnect" },
+                { text: "My mind immediately starts pointing out physical flaws", score: "judgment" },
+                { text: "I feel a sense of sadness or emotional distance", score: "grief" },
+                { text: "I feel comfortable, warm, and connected", score: "aligned" }
+            ]
+        },
+        {
+            question: "When you feel lonely, anxious, or insecure, do you ignore that little girl inside or soothe her?",
+            options: [
+                { text: "I override it and keep working/busy", score: "suppression" },
+                { text: "I look for comfort elsewhere (shopping, food, phone)", score: "distraction" },
+                { text: "I try to talk to myself but struggle to connect", score: "learning" },
+                { text: "I look in the mirror and hold space for her", score: "aligned" }
+            ]
+        },
+        {
+            question: "Where do you hold the feeling of not being 'enough'?",
+            options: [
+                { text: "Heart space / tightness in my chest", score: "worth" },
+                { text: "Womb space / hollow sensation in my stomach", score: "womb" },
+                { text: "Throat block / hard to speak my truth", score: "expression" }
+            ]
+        },
+        {
+            question: "What is your main goal for healing your self-worth?",
+            options: [
+                { text: "To build a consistent, daily ritual of self-love", score: "silver_tier" },
+                { text: "To deeply clear core trauma and shift my entire identity", score: "platinum_tier" }
+            ]
+        }
+    ],
+    health: [
+        {
+            question: "When your energy feels low or contracted, what is the primary physical symptom?",
+            options: [
+                { text: "Chronic fatigue / lack of physical drive", score: "vitality" },
+                { text: "Tension headaches or jaw clenching", score: "mind" },
+                { text: "Shallow breathing or chest tightness", score: "breath" }
+            ]
+        },
+        {
+            question: "Do you believe this physical contraction is connected to suppressed emotions?",
+            options: [
+                { text: "Yes, I hold stress directly in my body", score: "connection" },
+                { text: "I think so, but I don't know how to release it", score: "connection" },
+                { text: "No, it feels purely physical", score: "physical" }
+            ]
+        },
+        {
+            question: "How long have you been carrying these physical sensations of blockages?",
+            options: [
+                { text: "A few weeks or months", score: "recent" },
+                { text: "Years - it feels like a lifelong habit", score: "chronic" }
+            ]
+        },
+        {
+            question: "What is your healing commitment level today?",
+            options: [
+                { text: "I want basic somatic practices to clear daily stress", score: "silver_tier" },
+                { text: "I need deep private sessions to rewire this nervous system state", score: "platinum_tier" }
+            ]
+        }
+    ]
+};
+
+// --- Quiz State ---
+let quizState = {
+    selectedChallenge: null,
+    currentStep: 0,
+    answers: [],
+    diagnosis: null
+};
+
+// --- Initialize Quiz Events ---
+function initQuizOverlay() {
+    const challengeButtons = document.querySelectorAll(".btn-challenge");
+    challengeButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const challenge = btn.getAttribute("data-challenge");
+            startQuiz(challenge);
+        });
+    });
+    
+    const btnProceed = document.getElementById("btn-proceed-coaching");
+    if (btnProceed) {
+        btnProceed.addEventListener("click", () => {
+            closeQuizOverlay();
+        });
+    }
+}
+
+function startQuiz(challenge) {
+    quizState.selectedChallenge = challenge;
+    quizState.currentStep = 0;
+    quizState.answers = [];
+    
+    document.getElementById("screen-challenge").classList.add("hidden");
+    document.getElementById("screen-questions").classList.remove("hidden");
+    document.getElementById("quiz-progress-container").classList.remove("hidden");
+    
+    showQuestion();
+}
+
+function showQuestion() {
+    const questions = QUIZ_QUESTIONS[quizState.selectedChallenge];
+    const currentQ = questions[quizState.currentStep];
+    
+    // Update progress bar
+    const progressPercent = ((quizState.currentStep) / questions.length) * 100;
+    document.getElementById("quiz-progress-fill").style.width = `${progressPercent}%`;
+    document.getElementById("quiz-step-text").textContent = `Question ${quizState.currentStep + 1} of ${questions.length}`;
+    
+    // Set question text
+    document.getElementById("question-text").textContent = currentQ.question;
+    
+    // Render options
+    const optionsContainer = document.getElementById("options-container");
+    optionsContainer.innerHTML = "";
+    
+    currentQ.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "btn-quiz-option";
+        btn.textContent = opt.text;
+        btn.addEventListener("click", () => {
+            handleAnswerSelect(opt);
+        });
+        optionsContainer.appendChild(btn);
+    });
+}
+
+function handleAnswerSelect(option) {
+    quizState.answers.push(option);
+    
+    const questions = QUIZ_QUESTIONS[quizState.selectedChallenge];
+    quizState.currentStep++;
+    
+    if (quizState.currentStep < questions.length) {
+        showQuestion();
+    } else {
+        // Complete the quiz, show loading
+        showLoadingState();
+    }
+}
+
+function showLoadingState() {
+    document.getElementById("screen-questions").classList.add("hidden");
+    document.getElementById("quiz-progress-container").classList.add("hidden");
+    document.getElementById("screen-loading").classList.remove("hidden");
+    
+    const statuses = [
+        "Analyzing somatic sensations...",
+        "Mapping lineage patterns...",
+        "Evaluating Wealth Root blocks...",
+        "Formulating energetic diagnosis..."
+    ];
+    
+    let statusIndex = 0;
+    const statusTextEl = document.getElementById("loading-status-text");
+    
+    const interval = setInterval(() => {
+        statusIndex++;
+        if (statusIndex < statuses.length) {
+            statusTextEl.textContent = statuses[statusIndex];
+        } else {
+            clearInterval(interval);
+            calculateDiagnosis();
+        }
+    }, 1000);
+}
+
+function calculateDiagnosis() {
+    document.getElementById("screen-loading").classList.add("hidden");
+    document.getElementById("screen-results").classList.remove("hidden");
+    
+    const challenge = quizState.selectedChallenge;
+    const answers = quizState.answers;
+    
+    let blockType = "";
+    let blockTitle = "";
+    let description = "";
+    let isHighTicket = false;
+    
+    // Check if the user selected high-ticket options (like platinum_tier or chronic blocks)
+    const hasHighTicketAnswers = answers.some(ans => ans.score === "platinum_tier" || ans.score === "chronic");
+    
+    if (challenge === "money") {
+        blockTitle = "Financial Contraction";
+        const somaticAns = answers[0].text;
+        const fatherAns = answers[1].text;
+        
+        if (hasHighTicketAnswers) {
+            isHighTicket = true;
+            blockType = "Ancestral & Womb Wealth Root";
+            description = `You hold deep financial blocks related to your ancestral lineage. Your somatic scan indicated tension (${somaticAns}), which means stress around money is locked directly inside your nervous system. Standard group practice will not release this; you need intimate, 1-on-1 space to rewire your money mirror and clear inherited conditioning (₹1 - 2 Lakhs+).`;
+        } else {
+            blockType = "Father Wealth Root";
+            description = `Your wealth block is primarily tied to your Father Root. You indicated that you inherited beliefs (${fatherAns}) that make money feel like a constant struggle. Clearing this is the first step to expanding your money receiving limits. We suggest starting with our Silver Membership.`;
+        }
+    } else if (challenge === "relationships") {
+        blockTitle = "Relational Mirror Inheritance";
+        
+        if (hasHighTicketAnswers) {
+            isHighTicket = true;
+            blockType = "Generational Womb Blockage";
+            description = `The partnership struggles you repeat are inherited directly from your family lineage (Mirror Inheritance). Your somatic response indicates a deep nervous system reaction. This requires deep 1-on-1 clearing with Honey to clear these ancestral patterns (₹1 - 2 Lakhs+).`;
+        } else {
+            blockType = "Boundary & Parental Root";
+            description = `You are carrying ancestral relationship conditioning. You tend to repeat relationship struggles, feeling unappreciated or unsafe. Clearing your relationship mirror in our group sadhana will establish clean boundaries and self-worth.`;
+        }
+    } else if (challenge === "self-worth") {
+        blockTitle = "Self-Love Disconnection";
+        
+        if (hasHighTicketAnswers) {
+            isHighTicket = true;
+            blockType = "Core Inner-Child Womb Wound";
+            description = `You struggle to look into your own eyes in the mirror because of deep-seated judgments. You override that little girl inside. This requires high-level personal coaching (₹1 - 2 Lakhs+) to clear core traumas and establish absolute self-acceptance.`;
+        } else {
+            blockType = "Expression & Heart Block";
+            description = `You hold tension around your heart and throat, making it difficult to fully love yourself and speak your truth. Building a consistent daily mirror ritual with our Silver Membership will establish the self-love foundation you need.`;
+        }
+    } else {
+        blockTitle = "Somatic Energy Blockage";
+        
+        if (hasHighTicketAnswers) {
+            isHighTicket = true;
+            blockType = "Chronic Nervous System Contraction";
+            description = `You have been carrying physical stress and vital contractions for years. This is a chronic emotional block locked inside your muscles and womb space. 1-on-1 clearing with Honey is essential to safely discharge this stress (₹1 - 2 Lakhs+).`;
+        } else {
+            blockType = "Breath & Vitality Block";
+            description = `You hold tension primarily in your chest and breathing. Somatic practices and mirror coaching in our Silver Membership will help release this temporary tension, restore your energy, and expand your state of consciousness.`;
+        }
+    }
+    
+    quizState.diagnosis = {
+        blockTitle,
+        blockType,
+        description,
+        isHighTicket
+    };
+    
+    // Render Results
+    document.getElementById("result-block-title").textContent = blockTitle;
+    document.getElementById("result-block-type").textContent = blockType;
+    document.getElementById("result-description").textContent = description;
+    
+    // Show correct CTAs
+    if (isHighTicket) {
+        document.getElementById("cta-high-ticket").classList.remove("hidden");
+        document.getElementById("cta-low-ticket").classList.add("hidden");
+    } else {
+        document.getElementById("cta-low-ticket").classList.remove("hidden");
+        document.getElementById("cta-high-ticket").classList.add("hidden");
+    }
+}
+
+function closeQuizOverlay() {
+    const overlay = document.getElementById("quiz-overlay");
+    overlay.classList.add("fade-out");
+    
+    // Setup client tier based on quiz results
+    const isHighTicket = quizState.diagnosis ? quizState.diagnosis.isHighTicket : false;
+    
+    if (isHighTicket) {
+        setClientTier("diamond"); // Pre-set to Voice 3 (Diamond/Platinum)
+    } else {
+        setClientTier("silver"); // Pre-set to Voice 2 (Silver/Gold)
+    }
+    
+    // Let the AI Coach know about the quiz results
+    initializeCoachingSessionWithQuiz();
+}
+
+function initializeCoachingSessionWithQuiz() {
+    clearChatHistory();
+    
+    const diagnosis = quizState.diagnosis;
+    const challenge = quizState.selectedChallenge;
+    const isHighTicket = diagnosis.isHighTicket;
+    
+    // Compile dynamic intro message
+    let welcomeText = "";
+    if (isHighTicket) {
+        welcomeText = `Welcome back, sister. I see you just completed the assessment, and we have identified a **${diagnosis.blockType}** in your space.\n\nYou shared that you feel: *"${diagnosis.description.split('.')[1].trim()}"*\n\nLet's bring this raw truth directly to the mirror. Look into your own eyes, scan your body right now, and share: what somatic sensation is coming up for you as we speak about this block?`;
+    } else {
+        welcomeText = `Beautiful to connect with you, sister. I see that your assessment points to a **${diagnosis.blockType}** blocking your energy.\n\nTo begin clearing this block, let's start with your mirror. Look into your eyes. Breathe.\n\nTell me, how is your body feeling in this moment? What is the sensation in your chest or stomach?`;
+    }
+    
+    // Visual indicators
+    showTypingIndicator();
+    setTimeout(() => {
+        hideTypingIndicator();
+        addCoachMessage(welcomeText);
+        
+        // Inject this diagnosis directly into Gemini conversation history so it knows the quiz context!
+        conversationHistory.push(
+            { role: "user", parts: [{ text: `I just completed the Mirror Magic Assessment. My selected challenge was ${challenge}. My diagnosed block is ${diagnosis.blockType}. Description: ${diagnosis.description}` }] },
+            { role: "model", parts: [{ text: welcomeText }] }
+        );
+        isFirstHandshake = false; // Bypass the regular handshake!
+    }, 1200);
+}
 
 
 
