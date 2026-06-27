@@ -757,7 +757,7 @@ let currentSessionId = "";
 const voiceGuidanceAudio = new Audio("guidance.mp3");
 
 // --- Initialization ---
-function initApp() {
+document.addEventListener("DOMContentLoaded", () => {
     // Initialize or load session ID
     try {
         let sessId = sessionStorage.getItem("mirror_session_id");
@@ -884,13 +884,9 @@ function initApp() {
                     
                     // Reset screens
                     document.getElementById("screen-challenge").classList.remove("hidden");
-                    document.getElementById("screen-challenge").classList.add("active");
                     document.getElementById("screen-questions").classList.add("hidden");
-                    document.getElementById("screen-questions").classList.remove("active");
                     document.getElementById("screen-loading").classList.add("hidden");
-                    document.getElementById("screen-loading").classList.remove("active");
                     document.getElementById("screen-results").classList.add("hidden");
-                    document.getElementById("screen-results").classList.remove("active");
                     document.getElementById("quiz-progress-container").classList.add("hidden");
                 }
             }
@@ -914,13 +910,7 @@ function initApp() {
 
     // Run Sacred Space screen check once per day
     checkSacredSpaceDailyScreen();
-}
-
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initApp);
-} else {
-    initApp();
-}
+});
 
 // --- Camera / Mirror Viewport Logic ---
 async function startCamera() {
@@ -3389,22 +3379,9 @@ function startQuiz(challenge) {
     quizState.currentStep = 0;
     quizState.answers = [];
     
-    const challengeScreen = document.getElementById("screen-challenge");
-    if (challengeScreen) {
-        challengeScreen.classList.add("hidden");
-        challengeScreen.classList.remove("active");
-    }
-    
-    const questionsScreen = document.getElementById("screen-questions");
-    if (questionsScreen) {
-        questionsScreen.classList.remove("hidden");
-        questionsScreen.classList.add("active");
-    }
-    
-    const progressContainer = document.getElementById("quiz-progress-container");
-    if (progressContainer) {
-        progressContainer.classList.remove("hidden");
-    }
+    document.getElementById("screen-challenge").classList.add("hidden");
+    document.getElementById("screen-questions").classList.remove("hidden");
+    document.getElementById("quiz-progress-container").classList.remove("hidden");
     
     showQuestion();
 }
@@ -3451,22 +3428,9 @@ function handleAnswerSelect(option) {
 }
 
 function showLoadingState() {
-    const questionsScreen = document.getElementById("screen-questions");
-    if (questionsScreen) {
-        questionsScreen.classList.add("hidden");
-        questionsScreen.classList.remove("active");
-    }
-    
-    const progressContainer = document.getElementById("quiz-progress-container");
-    if (progressContainer) {
-        progressContainer.classList.add("hidden");
-    }
-    
-    const loadingScreen = document.getElementById("screen-loading");
-    if (loadingScreen) {
-        loadingScreen.classList.remove("hidden");
-        loadingScreen.classList.add("active");
-    }
+    document.getElementById("screen-questions").classList.add("hidden");
+    document.getElementById("quiz-progress-container").classList.add("hidden");
+    document.getElementById("screen-loading").classList.remove("hidden");
     
     const statuses = [
         "Analyzing somatic sensations...",
@@ -3490,17 +3454,8 @@ function showLoadingState() {
 }
 
 function calculateDiagnosis() {
-    const loadingScreen = document.getElementById("screen-loading");
-    if (loadingScreen) {
-        loadingScreen.classList.add("hidden");
-        loadingScreen.classList.remove("active");
-    }
-    
-    const resultsScreen = document.getElementById("screen-results");
-    if (resultsScreen) {
-        resultsScreen.classList.remove("hidden");
-        resultsScreen.classList.add("active");
-    }
+    document.getElementById("screen-loading").classList.add("hidden");
+    document.getElementById("screen-results").classList.remove("hidden");
     
     const challenge = quizState.selectedChallenge;
     const answers = quizState.answers;
