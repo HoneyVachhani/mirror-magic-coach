@@ -365,7 +365,10 @@ When offering the free masterclass describe it as:
 
 Program links for new leads:
 - Free Masterclass: https://website.mirrormagicmethod.com/
-- Silver Membership: https://learn.mirrormagicmovement.com/l/99cee80e7c
+- Silver Membership: (website price is ₹9,999, but you can get it for ₹6,999 through this app) https://learn.mirrormagicmovement.com/l/99cee80e7c
+- 21-Day Self-Love Challenge: (available at ₹4,999) https://learn.mirrormagicmovement.com/l/selflove
+- 7-Day Confidence Challenge: (taster challenge to experience self-worth) https://learn.mirrormagicmovement.com/l/confidence
+- 7-Day Meditation Challenge: (taster challenge for peace of mind) https://learn.mirrormagicmovement.com/l/meditation
 - ₹499 Money Workshop: https://learn.mirrormagicmovement.com/l/3088386e36
 - 8-Week Money Journey: https://learn.mirrormagicmovement.com/l/a33d0ee6e8
 - Instagram: @honey_vachhani
@@ -822,19 +825,17 @@ function initApp() {
         console.warn("localStorage not accessible:", e);
     }
 
-    // Check if we should show the quiz or load history
-    let hasHistory = false;
-    try {
-        hasHistory = loadLocalChatHistory();
-    } catch(e) {
-        console.warn("Error loading history:", e);
+    // Initialize quiz events and keep overlay hidden
+    initQuizOverlay();
+    const quizOverlay = document.getElementById("quiz-overlay");
+    if (quizOverlay) {
+        quizOverlay.classList.add("hidden");
     }
     
-    if (hasHistory) {
-        const quizOverlay = document.getElementById("quiz-overlay");
-        if (quizOverlay) quizOverlay.classList.add("fade-out");
-    } else {
-        initQuizOverlay();
+    try {
+        loadLocalChatHistory();
+    } catch(e) {
+        console.warn("Error loading history:", e);
     }
     setupEventListeners();
     
@@ -1129,18 +1130,30 @@ function setupEventListeners() {
             // Log the reflection event inside the current chat timeline
             addCoachMessage(`✨ Daily Reflection Saved (Session #${reflectionCount}). I have received your reflections on feeling ${feelVal}, thinking "${thinkVal}", and body sensation of ${bodyVal}.`);
 
-            // Free alignment path: instantly unlock coach if access is not locked
-            if (!isAccessLocked) {
-                isSubscribed = true;
+            // Check if they need to take the quiz
+            const quizCompleted = localStorage.getItem("mirror_quiz_completed") === "true";
+            if (!quizCompleted) {
+                // Show the quiz overlay instead of going to coach directly
+                const quizOverlay = document.getElementById("quiz-overlay");
+                if (quizOverlay) {
+                    quizOverlay.classList.remove("fade-out");
+                    quizOverlay.classList.remove("hidden");
+                    quizOverlay.classList.add("active");
+                }
+            } else {
+                // Free alignment path: instantly unlock coach if access is not locked
+                if (!isAccessLocked) {
+                    isSubscribed = true;
+                }
+                updateLockState();
+                addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
+                
+                // Immediate background sync to Google Sheets to mark First Reflection Completed = TRUE
+                saveConversationToGoogleSheets();
+                
+                switchMobileTab("coach");
+                userInputField.focus();
             }
-            updateLockState();
-            addCoachMessage(`✨ Coach unlocked! Let's talk about what came up in your reflection today.`);
-            
-            // Immediate background sync to Google Sheets to mark First Reflection Completed = TRUE
-            saveConversationToGoogleSheets();
-            
-            switchMobileTab("coach");
-            userInputField.focus();
         } catch(err) {
             console.error("Error saving reflection:", err);
         } finally {
@@ -1175,6 +1188,10 @@ function initChatFlow() {
 
 function triggerInitialGreeting(tier, name) {
     if (conversationHistory.length > 0) return; // Do not overwrite if history exists
+    
+    // Skip initial greeting if they have not completed the somatic block quiz yet
+    const quizCompleted = localStorage.getItem("mirror_quiz_completed") === "true";
+    if (!quizCompleted) return;
     
     const loader = document.getElementById("chat-initialization-loader");
     if (loader) {
@@ -3222,137 +3239,143 @@ window.handleOfferResponse = handleOfferResponse;
 const QUIZ_QUESTIONS = {
     money: [
         {
-            question: "When you think about paying your bills or your bank balance, where does your body contract?",
+            question: "When you think about money, what happens in your body?",
             options: [
-                { text: "Tightness in my chest / hard to breathe", score: "anxiety" },
-                { text: "A heavy weight on my shoulders", score: "ancestral" },
-                { text: "A knot or hollow feeling in my stomach", score: "survival" },
-                { text: "Numbness / I feel disconnected from my body", score: "disconnection" }
+                { text: "My chest feels tight and it's hard to breathe", score: "inner_child" },
+                { text: "My shoulders and neck feel very heavy", score: "lineage" },
+                { text: "My stomach feels hollow or like a knot", score: "parental" },
+                { text: "I feel completely blank or numb", score: "lineage" }
             ]
         },
         {
-            question: "Describe your father's relationship with money. Did you inherit a belief that money is hard to earn or runs out quickly?",
+            question: "Growing up, did you hear your parents worry that money is hard to get?",
             options: [
-                { text: "Yes, fully - I carry that exact worry", score: "father_root" },
-                { text: "Somewhat - I struggle to break past it", score: "father_root" },
-                { text: "No, he was abundant or supportive", score: "other" },
-                { text: "I'm not sure / he was absent", score: "ancestral" }
+                { text: "Yes, they worried about it all the time", score: "parental" },
+                { text: "Sometimes, we had to be very careful", score: "parental" },
+                { text: "No, we had enough, but I still worry today", score: "inner_child" },
+                { text: "I feel like I carry my family's old money struggles", score: "lineage" }
             ]
         },
         {
-            question: "When someone pays you or offers you abundance, do you feel uncomfortable or try to minimize it?",
+            question: "When someone buys you a gift or pays you, how do you feel?",
             options: [
-                { text: "Yes, I feel guilty or like I don't deserve it", score: "receiving" },
-                { text: "I feel uneasy or want to return the favor immediately", score: "receiving" },
-                { text: "No, I receive easily and with gratitude", score: "abundant" }
+                { text: "I feel bad, like I don't deserve it", score: "inner_child" },
+                { text: "I feel like I must pay them back immediately", score: "parental" },
+                { text: "I feel happy and say thank you", score: "aligned" }
             ]
         },
         {
-            question: "If your wealth blocks were completely cleared, what is the minimum monthly income your identity is ready to receive?",
+            question: "If you could change one thing about money today, what would it be?",
             options: [
-                { text: "₹50,000 – ₹1 Lakh", score: "silver_tier" },
-                { text: "₹1 Lakh – ₹3 Lakhs", score: "silver_tier" },
-                { text: "₹3 Lakhs – ₹5 Lakhs+", score: "platinum_tier" }
+                { text: "To stop worrying and feel safe", score: "inner_child" },
+                { text: "To let go of my parents' money habits", score: "parental" },
+                { text: "To clear the old family struggles", score: "lineage" }
             ]
         }
     ],
     relationships: [
         {
-            question: "Look at your parents' relationship. Are you repeating their arguments, distance, or boundary struggles in your own partnership?",
+            question: "When you have a fight or argument, what does your body do?",
             options: [
-                { text: "Yes, it is almost identical", score: "lineage" },
-                { text: "I actively try to do the opposite, but I feel blocked", score: "lineage" },
-                { text: "No, my dynamics are completely different", score: "other" }
+                { text: "I shut down, freeze, or stay quiet", score: "lineage" },
+                { text: "I get angry and raise my voice", score: "parental" },
+                { text: "I immediately apologize just to stop the fight", score: "inner_child" }
             ]
         },
         {
-            question: "When a conflict happens, what is your somatic response?",
+            question: "Do you see yourself arguing or acting the same way your parents did?",
             options: [
-                { text: "I shut down, freeze, and stay quiet", score: "freeze" },
-                { text: "I get angry, defensive, and fight", score: "fight" },
-                { text: "I anxious-please or apologize to keep the peace", score: "please" }
+                { text: "Yes, I act exactly like one of them", score: "parental" },
+                { text: "No, but I do the opposite and it still feels hard", score: "parental" },
+                { text: "I feel like I am carrying their unresolved sadness", score: "lineage" },
+                { text: "No, my relationships feel different", score: "inner_child" }
             ]
         },
         {
-            question: "What is the main pattern you see reflected in your relationships?",
+            question: "What is your biggest fear in relationships?",
             options: [
-                { text: "I feel taken for granted / I do all the work", score: "boundary" },
-                { text: "I fear abandonment and need reassurance", score: "abandonment" },
-                { text: "I feel suffocated or have a hard time opening up", score: "avoidant" }
+                { text: "That they will leave me or stop loving me", score: "inner_child" },
+                { text: "That I will lose my freedom or control", score: "parental" },
+                { text: "That I will be trapped in the same loop forever", score: "lineage" }
             ]
         },
         {
-            question: "How deep are you willing to go to clear these lineage hand-me-downs?",
+            question: "What do you want most in your relationship right now?",
             options: [
-                { text: "I want a daily self-healing structure", score: "silver_tier" },
-                { text: "I need deep, customized 1-on-1 clearing of my roots", score: "platinum_tier" }
+                { text: "To feel completely loved and safe as I am", score: "inner_child" },
+                { text: "To clear the old patterns I copied from my parents", score: "parental" },
+                { text: "To heal the heavy baggage of my family lineage", score: "lineage" }
             ]
         }
     ],
     "self-worth": [
         {
-            question: "When you look directly into your own eyes in the mirror for 10 seconds, what happens?",
+            question: "When you look at yourself in the mirror, what is your first thought?",
             options: [
-                { text: "I feel highly uncomfortable and want to look away", score: "disconnect" },
-                { text: "My mind immediately starts pointing out physical flaws", score: "judgment" },
-                { text: "I feel a sense of sadness or emotional distance", score: "grief" },
-                { text: "I feel comfortable, warm, and connected", score: "aligned" }
+                { text: "I feel sad or want to look away", score: "inner_child" },
+                { text: "I start pointing out flaws on my face or body", score: "parental" },
+                { text: "I feel disconnected, like looking at a stranger", score: "lineage" }
             ]
         },
         {
-            question: "When you feel lonely, anxious, or insecure, do you ignore that little girl inside or soothe her?",
+            question: "When you feel sad or not good enough, what do you do?",
             options: [
-                { text: "I override it and keep working/busy", score: "suppression" },
-                { text: "I look for comfort elsewhere (shopping, food, phone)", score: "distraction" },
-                { text: "I try to talk to myself but struggle to connect", score: "learning" },
-                { text: "I look in the mirror and hold space for her", score: "aligned" }
+                { text: "I keep working and stay busy to ignore it", score: "parental" },
+                { text: "I eat, buy things, or scroll on my phone", score: "inner_child" },
+                { text: "I hide in my room and cry", score: "inner_child" },
+                { text: "I feel heavy and numb, unable to do anything", score: "lineage" }
             ]
         },
         {
-            question: "Where do you hold the feeling of not being 'enough'?",
+            question: "Whose voice do you hear when you criticize yourself?",
             options: [
-                { text: "Heart space / tightness in my chest", score: "worth" },
-                { text: "Womb space / hollow sensation in my stomach", score: "womb" },
-                { text: "Throat block / hard to speak my truth", score: "expression" }
+                { text: "My mother's or father's voice", score: "parental" },
+                { text: "My own voice, but it's very harsh", score: "inner_child" },
+                { text: "A heavy, ancient worry from my family line", score: "lineage" }
             ]
         },
         {
-            question: "What is your main goal for healing your self-worth?",
+            question: "What is your deepest desire for yourself?",
             options: [
-                { text: "To build a consistent, daily ritual of self-love", score: "silver_tier" },
-                { text: "To deeply clear core trauma and shift my entire identity", score: "platinum_tier" }
+                { text: "To love myself and know I am enough", score: "inner_child" },
+                { text: "To stop copying my parents' emotional habits", score: "parental" },
+                { text: "To clear the old lineage burdens from my space", score: "lineage" }
             ]
         }
     ],
     health: [
         {
-            question: "When your energy feels low or contracted, what is the primary physical symptom?",
+            question: "Where do you feel physical tightness or pain most often?",
             options: [
-                { text: "Chronic fatigue / lack of physical drive", score: "vitality" },
-                { text: "Tension headaches or jaw clenching", score: "mind" },
-                { text: "Shallow breathing or chest tightness", score: "breath" }
+                { text: "Tightness in my chest / hard to breathe", score: "inner_child" },
+                { text: "Heavy shoulders, neck, or back load", score: "lineage" },
+                { text: "Knot or pain in my stomach", score: "parental" },
+                { text: "Headaches or jaw clenching", score: "parental" }
             ]
         },
         {
-            question: "Do you believe this physical contraction is connected to suppressed emotions?",
+            question: "When your body feels sick or tired, how do you treat yourself?",
             options: [
-                { text: "Yes, I hold stress directly in my body", score: "connection" },
-                { text: "I think so, but I don't know how to release it", score: "connection" },
-                { text: "No, it feels purely physical", score: "physical" }
+                { text: "I get angry and force myself to keep going", score: "parental" },
+                { text: "I feel guilty for resting or being weak", score: "inner_child" },
+                { text: "I feel heavy and give up entirely", score: "lineage" }
             ]
         },
         {
-            question: "How long have you been carrying these physical sensations of blockages?",
+            question: "Did your parents also carry physical stress or chronic pain?",
             options: [
-                { text: "A few weeks or months", score: "recent" },
-                { text: "Years - it feels like a lifelong habit", score: "chronic" }
+                { text: "Yes, they had the exact same health issues", score: "parental" },
+                { text: "Yes, they always complained of body pain", score: "parental" },
+                { text: "No, but I feel my body carries family stress", score: "lineage" },
+                { text: "No, this feels unique to me", score: "inner_child" }
             ]
         },
         {
-            question: "What is your healing commitment level today?",
+            question: "What do you want most for your body today?",
             options: [
-                { text: "I want basic somatic practices to clear daily stress", score: "silver_tier" },
-                { text: "I need deep private sessions to rewire this nervous system state", score: "platinum_tier" }
+                { text: "To feel light, safe, and loved", score: "inner_child" },
+                { text: "To release the stress I copied from my family", score: "parental" },
+                { text: "To clear the heavy lineage contractions from my muscles", score: "lineage" }
             ]
         }
     ]
@@ -3368,14 +3391,14 @@ let quizState = {
 
 // --- Initialize Quiz Events ---
 function initQuizOverlay() {
-    const challengeButtons = document.querySelectorAll(".btn-challenge");
-    challengeButtons.forEach(btn => {
+    const challengeBtns = document.querySelectorAll(".btn-challenge");
+    challengeBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             const challenge = btn.getAttribute("data-challenge");
             startQuiz(challenge);
         });
     });
-    
+
     const btnProceed = document.getElementById("btn-proceed-coaching");
     if (btnProceed) {
         btnProceed.addEventListener("click", () => {
@@ -3389,46 +3412,38 @@ function startQuiz(challenge) {
     quizState.currentStep = 0;
     quizState.answers = [];
     
-    const challengeScreen = document.getElementById("screen-challenge");
-    if (challengeScreen) {
-        challengeScreen.classList.add("hidden");
-        challengeScreen.classList.remove("active");
-    }
+    // Switch quiz screens
+    document.getElementById("screen-challenge").classList.add("hidden");
+    document.getElementById("screen-challenge").classList.remove("active");
     
-    const questionsScreen = document.getElementById("screen-questions");
-    if (questionsScreen) {
-        questionsScreen.classList.remove("hidden");
-        questionsScreen.classList.add("active");
-    }
+    document.getElementById("screen-questions").classList.remove("hidden");
+    document.getElementById("screen-questions").classList.add("active");
     
     const progressContainer = document.getElementById("quiz-progress-container");
     if (progressContainer) {
         progressContainer.classList.remove("hidden");
     }
     
-    showQuestion();
+    showNextQuestion();
 }
 
-function showQuestion() {
+function showNextQuestion() {
     const questions = QUIZ_QUESTIONS[quizState.selectedChallenge];
     const currentQ = questions[quizState.currentStep];
     
-    // Update progress bar
+    // Update progress
     const progressPercent = ((quizState.currentStep) / questions.length) * 100;
     document.getElementById("quiz-progress-fill").style.width = `${progressPercent}%`;
     document.getElementById("quiz-step-text").textContent = `Question ${quizState.currentStep + 1} of ${questions.length}`;
     
-    // Set question text
     document.getElementById("question-text").textContent = currentQ.question;
-    
-    // Render options
     const optionsContainer = document.getElementById("options-container");
     optionsContainer.innerHTML = "";
     
     currentQ.options.forEach(opt => {
         const btn = document.createElement("button");
         btn.className = "btn-quiz-option";
-        btn.textContent = opt.text;
+        btn.innerHTML = `<span class="option-text">${opt.text}</span>`;
         btn.addEventListener("click", () => {
             handleAnswerSelect(opt);
         });
@@ -3443,20 +3458,22 @@ function handleAnswerSelect(option) {
     quizState.currentStep++;
     
     if (quizState.currentStep < questions.length) {
-        showQuestion();
+        showNextQuestion();
     } else {
         // Complete the quiz, show loading
-        showLoadingState();
+        const progressContainer = document.getElementById("quiz-progress-container");
+        if (progressContainer) {
+            progressContainer.classList.add("hidden");
+        }
+        
+        document.getElementById("screen-questions").classList.add("hidden");
+        document.getElementById("screen-questions").classList.remove("active");
+        
+        showAnalyzingScreen();
     }
 }
 
-function showLoadingState() {
-    const questionsScreen = document.getElementById("screen-questions");
-    if (questionsScreen) {
-        questionsScreen.classList.add("hidden");
-        questionsScreen.classList.remove("active");
-    }
-    
+function showAnalyzingScreen() {
     const progressContainer = document.getElementById("quiz-progress-container");
     if (progressContainer) {
         progressContainer.classList.add("hidden");
@@ -3471,7 +3488,7 @@ function showLoadingState() {
     const statuses = [
         "Analyzing somatic sensations...",
         "Mapping lineage patterns...",
-        "Evaluating Wealth Root blocks...",
+        "Evaluating ancestral inheritance...",
         "Formulating energetic diagnosis..."
     ];
     
@@ -3502,98 +3519,71 @@ function calculateDiagnosis() {
         resultsScreen.classList.add("active");
     }
     
-    const challenge = quizState.selectedChallenge;
     const answers = quizState.answers;
     
-    let blockType = "";
+    let counts = { inner_child: 0, parental: 0, lineage: 0, aligned: 0 };
+    answers.forEach(ans => {
+        if (ans && ans.score) {
+            counts[ans.score] = (counts[ans.score] || 0) + 1;
+        }
+    });
+    
+    let primaryBlock = "inner_child";
+    let maxCount = -1;
+    ["inner_child", "parental", "lineage"].forEach(key => {
+        if (counts[key] > maxCount) {
+            maxCount = counts[key];
+            primaryBlock = key;
+        }
+    });
+    
     let blockTitle = "";
+    let blockType = "";
     let description = "";
-    let isHighTicket = false;
     
-    // Check if the user selected high-ticket options (like platinum_tier or chronic blocks)
-    const hasHighTicketAnswers = answers.some(ans => ans.score === "platinum_tier" || ans.score === "chronic");
-    
-    if (challenge === "money") {
-        blockTitle = "Financial Contraction";
-        const somaticAns = answers[0].text;
-        const fatherAns = answers[1].text;
-        
-        if (hasHighTicketAnswers) {
-            isHighTicket = true;
-            blockType = "Ancestral & Womb Wealth Root";
-            description = `You hold deep financial blocks related to your ancestral lineage. Your somatic scan indicated tension (${somaticAns}), which means stress around money is locked directly inside your nervous system. Standard group practice will not release this; you need intimate, 1-on-1 space to rewire your money mirror and clear inherited conditioning (₹1 - 2 Lakhs+).`;
-        } else {
-            blockType = "Father Wealth Root";
-            description = `Your wealth block is primarily tied to your Father Root. You indicated that you inherited beliefs (${fatherAns}) that make money feel like a constant struggle. Clearing this is the first step to expanding your money receiving limits. We suggest starting with our Silver Membership.`;
-        }
-    } else if (challenge === "relationships") {
-        blockTitle = "Relational Mirror Inheritance";
-        
-        if (hasHighTicketAnswers) {
-            isHighTicket = true;
-            blockType = "Generational Womb Blockage";
-            description = `The partnership struggles you repeat are inherited directly from your family lineage (Mirror Inheritance). Your somatic response indicates a deep nervous system reaction. This requires deep 1-on-1 clearing with Honey to clear these ancestral patterns (₹1 - 2 Lakhs+).`;
-        } else {
-            blockType = "Boundary & Parental Root";
-            description = `You are carrying ancestral relationship conditioning. You tend to repeat relationship struggles, feeling unappreciated or unsafe. Clearing your relationship mirror in our group sadhana will establish clean boundaries and self-worth.`;
-        }
-    } else if (challenge === "self-worth") {
-        blockTitle = "Self-Love Disconnection";
-        
-        if (hasHighTicketAnswers) {
-            isHighTicket = true;
-            blockType = "Core Inner-Child Womb Wound";
-            description = `You struggle to look into your own eyes in the mirror because of deep-seated judgments. You override that little girl inside. This requires high-level personal coaching (₹1 - 2 Lakhs+) to clear core traumas and establish absolute self-acceptance.`;
-        } else {
-            blockType = "Expression & Heart Block";
-            description = `You hold tension around your heart and throat, making it difficult to fully love yourself and speak your truth. Building a consistent daily mirror ritual with our Silver Membership will establish the self-love foundation you need.`;
-        }
+    if (primaryBlock === "inner_child") {
+        blockTitle = "Inner Child Wound";
+        blockType = "Heart & Womb Connection Block";
+        description = "You hold emotional tension in your heart and body, making it difficult to fully love and accept yourself exactly as you are. This often comes from early experiences where you felt unseen, unprotected, or not enough. Honey's AI Coach will help you gently connect with that little child inside and build a foundation of absolute self-love.";
+    } else if (primaryBlock === "parental") {
+        blockTitle = "Parental Dynamic / Mirror Inheritance";
+        blockType = "Parental Pattern Copying";
+        description = "You have unconsciously copied emotional reactions, money habits, or relationship dynamics from your mother or father. Even if you try to do the opposite, you feel bound to their loops. Honey's AI Coach will guide you through Mirror Inheritance™ work to see these patterns clearly, say 'I see you,' and release the burden.";
     } else {
-        blockTitle = "Somatic Energy Blockage";
-        
-        if (hasHighTicketAnswers) {
-            isHighTicket = true;
-            blockType = "Chronic Nervous System Contraction";
-            description = `You have been carrying physical stress and vital contractions for years. This is a chronic emotional block locked inside your muscles and womb space. 1-on-1 clearing with Honey is essential to safely discharge this stress (₹1 - 2 Lakhs+).`;
-        } else {
-            blockType = "Breath & Vitality Block";
-            description = `You hold tension primarily in your chest and breathing. Somatic practices and mirror coaching in our Silver Membership will help release this temporary tension, restore your energy, and expand your state of consciousness.`;
-        }
+        blockTitle = "Lineage Block";
+        blockType = "Generational Womb Contraction";
+        description = "You are carrying old family baggage, worries, and survival stress that doesn't actually belong to you. This lineage weight contracts your energy, blocking abundance and peace. Honey's AI Coach will help you step into your Original Divine Self and clear this heavy inheritance from your somatic space.";
     }
     
     quizState.diagnosis = {
         blockTitle,
         blockType,
         description,
-        isHighTicket
+        primaryBlock
     };
     
     // Render Results
     document.getElementById("result-block-title").textContent = blockTitle;
     document.getElementById("result-block-type").textContent = blockType;
     document.getElementById("result-description").textContent = description;
-    
-    // Show correct CTAs
-    if (isHighTicket) {
-        document.getElementById("cta-high-ticket").classList.remove("hidden");
-        document.getElementById("cta-low-ticket").classList.add("hidden");
-    } else {
-        document.getElementById("cta-low-ticket").classList.remove("hidden");
-        document.getElementById("cta-high-ticket").classList.add("hidden");
-    }
 }
 
 function closeQuizOverlay() {
     const overlay = document.getElementById("quiz-overlay");
     overlay.classList.add("fade-out");
     
-    // Setup client tier based on quiz results
-    const isHighTicket = quizState.diagnosis ? quizState.diagnosis.isHighTicket : false;
+    // Mark quiz as completed in local storage
+    localStorage.setItem("mirror_quiz_completed", "true");
     
-    if (isHighTicket) {
-        setClientTier("diamond"); // Pre-set to Voice 3 (Diamond/Platinum)
+    // Setup client tier based on quiz results
+    const primaryBlock = quizState.diagnosis ? quizState.diagnosis.primaryBlock : "inner_child";
+    
+    if (primaryBlock === "lineage") {
+        setClientTier("diamond");
+    } else if (primaryBlock === "parental") {
+        setClientTier("gold");
     } else {
-        setClientTier("silver"); // Pre-set to Voice 2 (Silver/Gold)
+        setClientTier("silver");
     }
     
     // Let the AI Coach know about the quiz results
@@ -3604,29 +3594,27 @@ function initializeCoachingSessionWithQuiz() {
     clearChatHistory();
     
     const diagnosis = quizState.diagnosis;
-    const challenge = quizState.selectedChallenge;
-    const isHighTicket = diagnosis.isHighTicket;
+    const blockTitle = diagnosis.blockTitle;
     
-    // Compile dynamic intro message
     let welcomeText = "";
-    if (isHighTicket) {
-        welcomeText = `Welcome back, sister. I see you just completed the assessment, and we have identified a **${diagnosis.blockType}** in your space.\n\nYou shared that you feel: *"${diagnosis.description.split('.')[1].trim()}"*\n\nLet's bring this raw truth directly to the mirror. Look into your own eyes, scan your body right now, and share: what somatic sensation is coming up for you as we speak about this block?`;
+    if (blockTitle === "Inner Child Wound") {
+        welcomeText = `Welcome, sister. I see that your assessment points to an **Inner Child Wound** holding back your self-love.\n\nTo begin clearing this block, let's start with your mirror. Look into your eyes. Breathe.\n\nTell me, what physical sensation or emotion rises in your heart right now as you look at your reflection?`;
+    } else if (blockTitle === "Parental Dynamic / Mirror Inheritance") {
+        welcomeText = `Welcome, sister. I see that your assessment points to a **Parental Dynamic / Mirror Inheritance** loop in your space.\n\nTo begin clearing this, let's look in the mirror. Connect with your breath.\n\nWhat feelings come up in your body when you think about the emotional habits you have inherited from your parents?`;
     } else {
-        welcomeText = `Beautiful to connect with you, sister. I see that your assessment points to a **${diagnosis.blockType}** blocking your energy.\n\nTo begin clearing this block, let's start with your mirror. Look into your eyes. Breathe.\n\nTell me, how is your body feeling in this moment? What is the sensation in your chest or stomach?`;
+        welcomeText = `Welcome, sister. I see that your assessment points to a heavy **Lineage Block** in your space.\n\nTo start clearing this ancestral weight, let's bring it to the mirror. Look into your eyes.\n\nTell me, how is your body feeling right now? Do you feel any tightness in your shoulders, neck, or back as we speak about this?`;
     }
     
-    // Visual indicators
     showTypingIndicator();
     setTimeout(() => {
         hideTypingIndicator();
         addCoachMessage(welcomeText);
         
-        // Inject this diagnosis directly into Gemini conversation history so it knows the quiz context!
         conversationHistory.push(
-            { role: "user", parts: [{ text: `I just completed the Mirror Magic Assessment. My selected challenge was ${challenge}. My diagnosed block is ${diagnosis.blockType}. Description: ${diagnosis.description}` }] },
+            { role: "user", parts: [{ text: `I just completed the Somatic Blockage Quiz. My diagnosed block is ${diagnosis.blockTitle} (${diagnosis.blockType}). Description: ${diagnosis.description}` }] },
             { role: "model", parts: [{ text: welcomeText }] }
         );
-        isFirstHandshake = false; // Bypass the regular handshake!
+        isFirstHandshake = false;
     }, 1200);
 }
 
