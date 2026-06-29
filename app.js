@@ -3239,143 +3239,144 @@ window.handleOfferResponse = handleOfferResponse;
 const QUIZ_QUESTIONS = {
     money: [
         {
-            question: "When you think about money, what happens in your body?",
+            question: "When you think about your work, job, or money, what feels the most stuck?",
             options: [
-                { text: "My chest feels tight and it's hard to breathe", score: "inner_child" },
-                { text: "My shoulders and neck feel very heavy", score: "lineage" },
-                { text: "My stomach feels hollow or like a knot", score: "parental" },
-                { text: "I feel completely blank or numb", score: "lineage" }
+                { text: "I feel stuck in my career or job growth", score: "inner_child" },
+                { text: "I work very hard but struggle to make or save money", score: "parental" },
+                { text: "I feel heavy pressure to prove myself and succeed", score: "parental" },
+                { text: "I feel completely blank, exhausted, or run out of energy", score: "lineage" }
             ]
         },
         {
-            question: "Growing up, did you hear your parents worry that money is hard to get?",
+            question: "Growing up, what did you see your parents do regarding work or money?",
             options: [
-                { text: "Yes, they worried about it all the time", score: "parental" },
-                { text: "Sometimes, we had to be very careful", score: "parental" },
-                { text: "No, we had enough, but I still worry today", score: "inner_child" },
-                { text: "I feel like I carry my family's old money struggles", score: "lineage" }
+                { text: "They worked extremely hard and struggled to survive", score: "lineage" },
+                { text: "They constantly worried about money running out", score: "parental" },
+                { text: "They set very high expectations and compared me to others", score: "parental" },
+                { text: "They were supportive, but I still feel insecure today", score: "inner_child" }
             ]
         },
         {
-            question: "When someone buys you a gift or pays you, how do you feel?",
+            question: "When you receive praise at work or someone gives you money/gifts, what do you do?",
             options: [
-                { text: "I feel bad, like I don't deserve it", score: "inner_child" },
-                { text: "I feel like I must pay them back immediately", score: "parental" },
-                { text: "I feel happy and say thank you", score: "aligned" }
+                { text: "I feel uncomfortable, shy, or like I don't deserve it", score: "inner_child" },
+                { text: "I feel uneasy and think I must return the favor immediately", score: "parental" },
+                { text: "I accept it easily and say thank you with joy", score: "aligned" }
             ]
         },
         {
-            question: "If you could change one thing about money today, what would it be?",
+            question: "If you could fix one thing about your work or money today, what is it?",
             options: [
-                { text: "To stop worrying and feel safe", score: "inner_child" },
-                { text: "To let go of my parents' money habits", score: "parental" },
-                { text: "To clear the old family struggles", score: "lineage" }
+                { text: "To find a job/career I love and feel happy doing", score: "inner_child" },
+                { text: "To stop worrying about money and feel secure", score: "inner_child" },
+                { text: "To let go of the pressure to always do more", score: "parental" },
+                { text: "To clear the old family struggles and baggage", score: "lineage" }
             ]
         }
     ],
     relationships: [
         {
-            question: "When you have a fight or argument, what does your body do?",
+            question: "When you have a disagreement or argument with someone close, what happens?",
             options: [
-                { text: "I shut down, freeze, or stay quiet", score: "lineage" },
-                { text: "I get angry and raise my voice", score: "parental" },
-                { text: "I immediately apologize just to stop the fight", score: "inner_child" }
+                { text: "I keep quiet, shut down, and hide my feelings", score: "lineage" },
+                { text: "I get angry, raise my voice, or argue back", score: "parental" },
+                { text: "I say sorry immediately just to keep the peace", score: "inner_child" }
             ]
         },
         {
-            question: "Do you see yourself arguing or acting the same way your parents did?",
+            question: "Do you see yourself arguing or acting like your parents did?",
             options: [
-                { text: "Yes, I act exactly like one of them", score: "parental" },
+                { text: "Yes, I repeat the exact same reactions", score: "parental" },
                 { text: "No, but I do the opposite and it still feels hard", score: "parental" },
-                { text: "I feel like I am carrying their unresolved sadness", score: "lineage" },
-                { text: "No, my relationships feel different", score: "inner_child" }
+                { text: "I feel like I carry my family's emotional sadness", score: "lineage" },
+                { text: "No, my reactions feel completely my own", score: "inner_child" }
             ]
         },
         {
-            question: "What is your biggest fear in relationships?",
+            question: "What is your biggest worry in your relationships?",
             options: [
-                { text: "That they will leave me or stop loving me", score: "inner_child" },
-                { text: "That I will lose my freedom or control", score: "parental" },
-                { text: "That I will be trapped in the same loop forever", score: "lineage" }
+                { text: "That they will leave me or reject me", score: "inner_child" },
+                { text: "That I will be controlled or lose my freedom", score: "parental" },
+                { text: "That I will stay stuck in the same loop forever", score: "lineage" }
             ]
         },
         {
-            question: "What do you want most in your relationship right now?",
+            question: "What do you want to feel most in your relationships?",
             options: [
-                { text: "To feel completely loved and safe as I am", score: "inner_child" },
-                { text: "To clear the old patterns I copied from my parents", score: "parental" },
-                { text: "To heal the heavy baggage of my family lineage", score: "lineage" }
+                { text: "To feel completely safe, loved, and accepted", score: "inner_child" },
+                { text: "To stop copying my family's relationship habits", score: "parental" },
+                { text: "To clear the old family baggage and start fresh", score: "lineage" }
             ]
         }
     ],
     "self-worth": [
         {
-            question: "When you look at yourself in the mirror, what is your first thought?",
+            question: "When you look at your face in the mirror, what is your first thought?",
             options: [
-                { text: "I feel sad or want to look away", score: "inner_child" },
-                { text: "I start pointing out flaws on my face or body", score: "parental" },
+                { text: "I feel sad, self-critical, or want to look away", score: "inner_child" },
+                { text: "I immediately start looking for flaws or problems", score: "parental" },
                 { text: "I feel disconnected, like looking at a stranger", score: "lineage" }
             ]
         },
         {
-            question: "When you feel sad or not good enough, what do you do?",
+            question: "When you feel lonely, sad, or down, how do you handle it?",
             options: [
-                { text: "I keep working and stay busy to ignore it", score: "parental" },
-                { text: "I eat, buy things, or scroll on my phone", score: "inner_child" },
-                { text: "I hide in my room and cry", score: "inner_child" },
-                { text: "I feel heavy and numb, unable to do anything", score: "lineage" }
+                { text: "I keep myself busy with work or chores to ignore it", score: "parental" },
+                { text: "I eat, shop, or scroll on my phone for comfort", score: "inner_child" },
+                { text: "I cry or feel trapped in my thoughts", score: "inner_child" },
+                { text: "I feel completely heavy, tired, and numb", score: "lineage" }
             ]
         },
         {
             question: "Whose voice do you hear when you criticize yourself?",
             options: [
                 { text: "My mother's or father's voice", score: "parental" },
-                { text: "My own voice, but it's very harsh", score: "inner_child" },
-                { text: "A heavy, ancient worry from my family line", score: "lineage" }
+                { text: "My own voice, but it's very strict and harsh", score: "inner_child" },
+                { text: "A heavy, old worry from my family lineage", score: "lineage" }
             ]
         },
         {
-            question: "What is your deepest desire for yourself?",
+            question: "What is the main gift you want to give yourself today?",
             options: [
-                { text: "To love myself and know I am enough", score: "inner_child" },
-                { text: "To stop copying my parents' emotional habits", score: "parental" },
-                { text: "To clear the old lineage burdens from my space", score: "lineage" }
+                { text: "To love myself and know that I am enough", score: "inner_child" },
+                { text: "To stop copying my parents' strict expectations", score: "parental" },
+                { text: "To release the heavy family burdens I carry", score: "lineage" }
             ]
         }
     ],
     health: [
         {
-            question: "Where do you feel physical tightness or pain most often?",
+            question: "Where does stress or tightness show up in your body first?",
             options: [
-                { text: "Tightness in my chest / hard to breathe", score: "inner_child" },
+                { text: "Tightness in my chest or throat / hard to breathe", score: "inner_child" },
                 { text: "Heavy shoulders, neck, or back load", score: "lineage" },
-                { text: "Knot or pain in my stomach", score: "parental" },
-                { text: "Headaches or jaw clenching", score: "parental" }
+                { text: "A tight knot or discomfort in my stomach", score: "parental" },
+                { text: "Headaches, jaw clenching, or overthinking", score: "parental" }
             ]
         },
         {
-            question: "When your body feels sick or tired, how do you treat yourself?",
+            question: "When your body is tired or exhausted, what do you do?",
             options: [
-                { text: "I get angry and force myself to keep going", score: "parental" },
-                { text: "I feel guilty for resting or being weak", score: "inner_child" },
-                { text: "I feel heavy and give up entirely", score: "lineage" }
+                { text: "I get angry at my body and force myself to keep going", score: "parental" },
+                { text: "I feel guilty or like I am being lazy for resting", score: "inner_child" },
+                { text: "I give up completely and feel heavy/numb", score: "lineage" }
             ]
         },
         {
-            question: "Did your parents also carry physical stress or chronic pain?",
+            question: "Did your parents or family members carry a lot of stress in their body?",
             options: [
-                { text: "Yes, they had the exact same health issues", score: "parental" },
-                { text: "Yes, they always complained of body pain", score: "parental" },
-                { text: "No, but I feel my body carries family stress", score: "lineage" },
-                { text: "No, this feels unique to me", score: "inner_child" }
+                { text: "Yes, they had similar health issues or pain", score: "parental" },
+                { text: "Yes, they were always tired and stressed", score: "parental" },
+                { text: "No, but I feel my body holds my family's old stress", score: "lineage" },
+                { text: "No, this feels unique to my own life", score: "inner_child" }
             ]
         },
         {
-            question: "What do you want most for your body today?",
+            question: "What is your highest hope for your body today?",
             options: [
-                { text: "To feel light, safe, and loved", score: "inner_child" },
-                { text: "To release the stress I copied from my family", score: "parental" },
-                { text: "To clear the heavy lineage contractions from my muscles", score: "lineage" }
+                { text: "To feel light, relaxed, and safe", score: "inner_child" },
+                { text: "To let go of the physical stress I copied from my parents", score: "parental" },
+                { text: "To clear the heavy lineage weight from my muscles", score: "lineage" }
             ]
         }
     ]
