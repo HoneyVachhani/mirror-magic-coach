@@ -64,6 +64,14 @@
                         <label for="onboard-phone" id="label-onboard-phone" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">WhatsApp Number (with country code)</label>
                         <input type="tel" id="onboard-phone" placeholder="+91 98765 43210" required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border-glass); outline: none; background: #ffffff; color: #1C1C1E; font-size: 0.95rem; box-sizing: border-box;">
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="onboard-member-type" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); display: block; margin-bottom: 5px;">Are you already a paid member of our community?</label>
+                        <select id="onboard-member-type" class="context-select" style="width: 100%; font-weight: 600; padding: 12px; border-radius: 12px; background: #ffffff;">
+                            <option value="new">No, I am new (Start 7-Day Free Trial)</option>
+                            <option value="member">Yes, I am a paid member (Silver/Gold/Diamond)</option>
+                        </select>
+                    </div>
 
                     <div id="referrer-info-msg" class="hidden" style="font-size: 0.85rem; color: var(--color-primary); font-weight: 500; margin-top: 5px;"></div>
                     
@@ -449,6 +457,7 @@
                     </select>
                     
                     <button id="btn-download-chat" class="btn btn-secondary" title="Download Chat History" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-border-glass); cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box;">📥 Download</button>
+                    <button id="btn-view-report" class="btn btn-secondary" onclick="openReportModal()" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: var(--color-primary); color: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: none; cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box;">📋 View Report</button>
                     <button id="btn-email-chat" class="btn btn-secondary" title="Email Chat History" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-border-glass); cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box;">📧 Email Me</button>
                     <button id="btn-reset-quiz" class="btn btn-secondary" title="Reset Assessment & Chat" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; background: #ffffff; border-radius: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-border-glass); cursor: pointer; font-weight: 600; height: 36px; box-sizing: border-box; color: var(--color-primary);">🔄 Reset Assessment</button>
                     
@@ -531,6 +540,31 @@
         </main>
     </div>
 
+
+    <!-- Somatic Diagnostic Report Modal -->
+    <div id="report-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 550px; padding: 30px; text-align: left; background-color: #fffbf2; border: 2px solid var(--color-primary); box-shadow: 0 10px 40px rgba(183, 140, 45, 0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(183,140,45,0.2); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-family: var(--font-heading); color: var(--color-primary); font-size: 1.4rem; margin: 0; font-weight: 700;">📋 Somatic Diagnostic Report</h2>
+                <button onclick="closeReportModal()" style="background: transparent; border: none; font-size: 1.8rem; color: var(--color-text-secondary); cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(183, 140, 45, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(183,140,45,0.15); margin-bottom: 20px;">
+                    <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--color-primary); letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Your Primary Somatic Blockage:</span>
+                    <strong id="report-block-title" style="font-size: 1.3rem; color: #1C1C1E; display: block; margin-bottom: 5px;">--</strong>
+                    <span id="report-block-type" style="font-size: 0.9rem; color: var(--color-text-secondary); font-style: italic; font-weight: 500;">--</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: #1C1C1E; margin-bottom: 10px; font-weight: 600;">What this means for your life:</h4>
+                    <p id="report-description-text" style="font-size: 0.94rem; color: var(--color-text-secondary); line-height: 1.6; margin: 0;">Complete the Somatic Assessment first to generate your report.</p>
+                </div>
+                <div style="border-top: 1px solid rgba(183, 140, 45, 0.15); padding-top: 20px; text-align: center;">
+                    <p style="font-size: 0.88rem; color: var(--color-text-muted); margin-bottom: 20px; font-weight: 500;">Commit to your daily Mirror practice and talk with Honey AI Coach to release this block.</p>
+                    <button class="btn btn-secondary" onclick="closeReportModal()" style="padding: 10px 24px; font-weight: 600;">Close Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Bundle -->
     <script src="app.js?v=7.0"></script>

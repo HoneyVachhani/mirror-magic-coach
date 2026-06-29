@@ -30,6 +30,25 @@ function doGet(e) {
     
     email = email.trim().toLowerCase();
     
+    // Action: Log Quiz Results
+    if (action === "logQuiz") {
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var quizSheet = ss.getSheetByName("QuizResults");
+      if (!quizSheet) {
+        quizSheet = ss.insertSheet("QuizResults");
+        quizSheet.appendRow(["Timestamp", "Email", "Name", "Category", "Diagnosis Block", "Diagnosis Type", "Answers Details"]);
+      }
+      var name = e.parameter.name || "";
+      var category = e.parameter.category || "";
+      var blockTitle = e.parameter.blockTitle || "";
+      var blockType = e.parameter.blockType || "";
+      var answers = e.parameter.answers || "";
+      
+      quizSheet.appendRow([new Date(), email, name, category, blockTitle, blockType, answers]);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Quiz result logged" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // Action: Send OTP
     if (action === "sendOTP") {
       var code = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6 digit code
@@ -125,8 +144,18 @@ function doGet(e) {
       
       var today = new Date();
       
+      // Check if they claimed to be an existing member
+      var isMember = e.parameter.isMember || "false";
+      
       // If user is new:
       if (userRowIndex === -1) {
+        if (isMember === "true") {
+          return ContentService.createTextOutput(JSON.stringify({
+            status: "not_found",
+            message: "We couldn't find this email in our paid member list. Please check your email spelling or register as a new user."
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+        
         // If Name and Phone are not provided, we return "register_required" status
         if (!name || !phone) {
           return ContentService.createTextOutput(JSON.stringify({

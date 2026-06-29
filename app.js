@@ -837,6 +837,17 @@ function initApp() {
         }
     }
     
+    // Load stored somatic diagnosis if exists
+    try {
+        const storedDiag = localStorage.getItem("mirror_diagnosis");
+        if (storedDiag) {
+            quizState.diagnosis = JSON.parse(storedDiag);
+        }
+        updateReportButtonState();
+    } catch(e) {
+        console.warn("Error loading stored diagnosis:", e);
+    }
+    
     try {
         loadLocalChatHistory();
     } catch(e) {
@@ -2388,6 +2399,8 @@ async function submitOnboardingForm(e) {
     const emailVal = document.getElementById("onboard-email").value.trim().toLowerCase();
     const phoneVal = document.getElementById("onboard-phone").value.trim();
     const langVal = document.getElementById("onboard-lang").value;
+    const memberType = document.getElementById("onboard-member-type").value;
+    const isMemberCheck = memberType === "member" ? "true" : "false";
     
     if (!nameVal || !emailVal || !phoneVal) {
         alert("Please fill out all fields.");
@@ -2404,13 +2417,18 @@ async function submitOnboardingForm(e) {
     
     const submitBtn = document.getElementById("btn-onboard-submit");
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = "Registering...";
+    submitBtn.textContent = "Verifying...";
     submitBtn.disabled = true;
     
     try {
-        const fetchUrl = `${scriptUrl}?action=checkAccess&email=${encodeURIComponent(emailVal)}&name=${encodeURIComponent(nameVal)}&phone=${encodeURIComponent(phoneVal)}&referrer=${encodeURIComponent(referrerEmail)}`;
+        const fetchUrl = `${scriptUrl}?action=checkAccess&email=${encodeURIComponent(emailVal)}&name=${encodeURIComponent(nameVal)}&phone=${encodeURIComponent(phoneVal)}&referrer=${encodeURIComponent(referrerEmail)}&isMember=${isMemberCheck}`;
         const res = await fetch(fetchUrl);
         const data = await res.json();
+        
+        if (data && data.status === "not_found") {
+            alert(data.message);
+            return;
+        }
         
         if (data && (data.status === "active" || data.status === "success")) {
             localStorage.setItem("mirror_user_email", emailVal);
@@ -3571,10 +3589,78 @@ function calculateDiagnosis() {
         primaryBlock
     };
     
+    // Persist diagnosis in local storage
+    localStorage.setItem("mirror_diagnosis", JSON.stringify(quizState.diagnosis));
+    
     // Render Results
     document.getElementById("result-block-title").textContent = blockTitle;
     document.getElementById("result-block-type").textContent = blockType;
     document.getElementById("result-description").textContent = description;
+    
+    // Toggle the report button in the header
+    updateReportButtonState();
+    
+    // Log to Google Sheets
+    logQuizResultsToSheets();
+}
+
+function updateReportButtonState() {
+    const btnViewReport = document.getElementById("btn-view-report");
+    if (!btnViewReport) return;
+    
+    const quizCompleted = localStorage.getItem("mirror_quiz_completed") === "true";
+    if (quizCompleted) {
+        btnViewReport.classList.remove("hidden");
+        btnViewReport.style.display = "flex";
+    } else {
+        btnViewReport.classList.add("hidden");
+        btnViewReport.style.display = "none";
+    }
+}
+
+function openReportModal() {
+    const modal = document.getElementById("report-modal");
+    if (!modal) return;
+    
+    const diagnosis = quizState.diagnosis;
+    if (diagnosis) {
+        document.getElementById("report-block-title").textContent = diagnosis.blockTitle;
+        document.getElementById("report-block-type").textContent = diagnosis.blockType;
+        document.getElementById("report-description-text").textContent = diagnosis.description;
+    }
+    
+    modal.classList.remove("hidden");
+}
+
+function closeReportModal() {
+    const modal = document.getElementById("report-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+window.openReportModal = openReportModal;
+window.closeReportModal = closeReportModal;
+
+async function logQuizResultsToSheets() {
+    const email = localStorage.getItem("mirror_user_email");
+    const name = localStorage.getItem("mirror_user_name") || userName;
+    if (!email) return;
+    
+    const scriptUrl = GOOGLE_SCRIPT_WEBAPP_URL;
+    if (!scriptUrl || scriptUrl.includes("exec") === false) return;
+    
+    const diagnosis = quizState.diagnosis;
+    const challenge = quizState.selectedChallenge;
+    const answersText = quizState.answers.map((ans, idx) => `Q${idx+1}: ${ans.text} (${ans.score})`).join(" | ");
+    
+    try {
+        const fetchUrl = `${scriptUrl}?action=logQuiz&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(challenge)}&blockTitle=${encodeURIComponent(diagnosis.blockTitle)}&blockType=${encodeURIComponent(diagnosis.blockType)}&answers=${encodeURIComponent(answersText)}`;
+        await fetch(fetchUrl);
+        console.log("Quiz results successfully logged to Sheets!");
+    } catch(err) {
+        console.error("Failed to log quiz results to Sheets:", err);
+    }
 }
 
 function closeQuizOverlay() {
@@ -3614,11 +3700,11 @@ function initializeCoachingSessionWithQuiz() {
     
     let welcomeText = "";
     if (blockTitle === "Inner Child Wound") {
-        welcomeText = `Welcome, sister. I see that your assessment points to an **Inner Child Wound** holding back your self-love.\n\nTo begin clearing this block, let's start with your mirror. Look into your eyes. Breathe.\n\nTell me, what physical sensation or emotion rises in your heart right now as you look at your reflection?`;
+        welcomeText = `Welcome, ${userName}. I see that your assessment points to an **Inner Child Wound** holding back your self-love.\n\nTo begin clearing this block, let's start with your mirror. Look into your eyes. Breathe.\n\nTell me, what physical sensation or emotion rises in your heart right now as you look at your reflection?`;
     } else if (blockTitle === "Parental Dynamic / Mirror Inheritance") {
-        welcomeText = `Welcome, sister. I see that your assessment points to a **Parental Dynamic / Mirror Inheritance** loop in your space.\n\nTo begin clearing this, let's look in the mirror. Connect with your breath.\n\nWhat feelings come up in your body when you think about the emotional habits you have inherited from your parents?`;
+        welcomeText = `Welcome, ${userName}. I see that your assessment points to a **Parental Dynamic / Mirror Inheritance** loop in your space.\n\nTo begin clearing this, let's look in the mirror. Connect with your breath.\n\nWhat feelings come up in your body when you think about the emotional habits you have inherited from your parents?`;
     } else {
-        welcomeText = `Welcome, sister. I see that your assessment points to a heavy **Lineage Block** in your space.\n\nTo start clearing this ancestral weight, let's bring it to the mirror. Look into your eyes.\n\nTell me, how is your body feeling right now? Do you feel any tightness in your shoulders, neck, or back as we speak about this?`;
+        welcomeText = `Welcome, ${userName}. I see that your assessment points to a heavy **Lineage Block** in your space.\n\nTo start clearing this ancestral weight, let's bring it to the mirror. Look into your eyes.\n\nTell me, how is your body feeling right now? Do you feel any tightness in your shoulders, neck, or back as we speak about this?`;
     }
     
     showTypingIndicator();
