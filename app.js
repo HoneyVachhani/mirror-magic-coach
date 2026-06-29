@@ -825,11 +825,16 @@ function initApp() {
         console.warn("localStorage not accessible:", e);
     }
 
-    // Initialize quiz events and keep overlay hidden
+    // Initialize quiz events and show/hide overlay based on completion
     initQuizOverlay();
     const quizOverlay = document.getElementById("quiz-overlay");
     if (quizOverlay) {
-        quizOverlay.classList.add("hidden");
+        const quizCompleted = localStorage.getItem("mirror_quiz_completed") === "true";
+        if (quizCompleted) {
+            quizOverlay.classList.add("hidden");
+        } else {
+            quizOverlay.classList.remove("hidden");
+        }
     }
     
     try {
@@ -2563,10 +2568,13 @@ function updateLockState() {
     if (!isFirstHandshake && !isSubscribed && !isCommunityMember && !reflectionSaved) {
         lockOverlay.classList.remove("hidden");
         lockOverlay.innerHTML = `
-            <div class="lock-card glass-panel">
-                <span class="lock-icon">🔒</span>
-                <h3>${t.lock_daily_title}</h3>
-                <p>${t.lock_daily_desc}</p>
+            <div class="lock-card glass-panel" style="text-align: center; padding: 25px;">
+                <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔒</span>
+                <h3 style="font-size: 1.25rem; margin-bottom: 10px;">${t.lock_daily_title}</h3>
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 20px; line-height: 1.45;">${t.lock_daily_desc}</p>
+                <button class="btn btn-primary" onclick="switchMobileTab('mirror')" style="padding: 10px 20px; font-size: 0.95rem; border-radius: 8px;">
+                    👉 Go to Mirror Work Now
+                </button>
             </div>
         `;
     } else {
@@ -3040,9 +3048,9 @@ async function updateReferralUI() {
     const userEmail = localStorage.getItem("mirror_user_email");
     const referralContainer = document.getElementById("referral-dashboard-container");
     
-    // Toggle container visibility: only show if at least 1 reflection is completed
+    // Toggle container visibility: only show if at least 3 reflections are completed
     if (referralContainer) {
-        if (reflectionCount >= 1) {
+        if (reflectionCount >= 3) {
             referralContainer.classList.remove("hidden");
         } else {
             referralContainer.classList.add("hidden");
@@ -3572,6 +3580,10 @@ function calculateDiagnosis() {
 function closeQuizOverlay() {
     const overlay = document.getElementById("quiz-overlay");
     overlay.classList.add("fade-out");
+    setTimeout(() => {
+        overlay.classList.add("hidden");
+        overlay.classList.remove("fade-out");
+    }, 400);
     
     // Mark quiz as completed in local storage
     localStorage.setItem("mirror_quiz_completed", "true");
@@ -3586,6 +3598,9 @@ function closeQuizOverlay() {
     } else {
         setClientTier("silver");
     }
+    
+    // Automatically switch tabs to the Mirror Work tab to continue the step-by-step flow
+    switchMobileTab("mirror");
     
     // Let the AI Coach know about the quiz results
     initializeCoachingSessionWithQuiz();

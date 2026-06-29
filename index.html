@@ -181,6 +181,11 @@
                 </div>
             </header>
 
+            <!-- Step-by-Step Tab Guidance Tip -->
+            <div class="tab-guidance-tip" style="padding: 10px 15px; background: rgba(183, 140, 45, 0.08); border-left: 4px solid var(--color-primary); border-radius: 4px; margin: 15px; font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.4;">
+                Explore Honey's sacred courses, challenges, and guided practices to support your daily alignment.
+            </div>
+
             <section class="methodology-guides" aria-label="Methodology and Philosophy Guides">
                 <h2 class="section-title">The Methodology</h2>
                 
@@ -255,6 +260,11 @@
 
         <!-- Center Column: Centered Mirror & Daily Journal -->
         <section class="mirror-pane pane-section active" id="mirror-pane">
+            <!-- Step-by-Step Tab Guidance Tip -->
+            <div id="mirror-tab-guidance" class="tab-guidance-tip" style="padding: 10px 15px; background: rgba(183, 140, 45, 0.08); border-left: 4px solid var(--color-primary); border-radius: 4px; margin-bottom: 20px; font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.4;">
+                <strong>Step 1:</strong> Look into your eyes in the camera/mirror, fill out your 3 daily alignment fields below, and click <strong>Save Daily Reflection</strong> to unlock your coach.
+            </div>
+
             <!-- Referral Dashboard Card (Prominently placed at the top, hidden by default until session 1 completed) -->
             <div class="referral-dashboard-card glass-panel hidden" id="referral-dashboard-container" style="margin-bottom: 20px;">
                 <h2 class="section-title text-gold" style="font-size: 1.25rem; margin-bottom: 10px;">✨ Referral Program</h2>
@@ -412,6 +422,10 @@
 
         <!-- Right Column: Main Coaching Chat Pane -->
         <main class="chat-pane pane-section" id="chat-pane">
+            <!-- Step-by-Step Tab Guidance Tip -->
+            <div id="coach-tab-guidance" class="tab-guidance-tip" style="padding: 10px 15px; background: rgba(183, 140, 45, 0.08); border-left: 4px solid var(--color-primary); border-radius: 4px; margin: 15px 15px 0 15px; font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.4;">
+                Chat with Honey's AI Coach about what came up in your mirror reflection today.
+            </div>
             <header class="chat-header">
                 <div class="coach-profile">
                     <div class="avatar-container">
@@ -466,10 +480,13 @@
 
             <!-- Locked Overlay for Paywall/Survey -->
             <div id="chat-lock-overlay" class="lock-overlay">
-                <div class="lock-card glass-panel">
-                    <span class="lock-icon">🔒</span>
-                    <h3>Honey AI Coach Locked</h3>
-                    <p>Complete your Daily Alignment reflection in the center pane first, then save your entry to unlock personal guidance from Honey AI Coach.</p>
+                <div class="lock-card glass-panel" style="text-align: center; padding: 25px;">
+                    <span class="lock-icon" style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔒</span>
+                    <h3 style="font-size: 1.25rem; margin-bottom: 10px;">Honey AI Coach Locked</h3>
+                    <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 20px; line-height: 1.45;">To unlock Honey's personalized guidance, you must first complete your daily mirror reflection.</p>
+                    <button class="btn btn-primary" onclick="switchMobileTab('mirror')" style="padding: 10px 20px; font-size: 0.95rem; border-radius: 8px;">
+                        👉 Go to Mirror Work Now
+                    </button>
                 </div>
             </div>
 
