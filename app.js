@@ -3516,10 +3516,10 @@ function showAnalyzingScreen() {
     }
     
     const statuses = [
-        "Analyzing somatic sensations...",
-        "Mapping lineage patterns...",
-        "Evaluating ancestral inheritance...",
-        "Formulating energetic diagnosis..."
+        "Connecting with your energy...",
+        "Understanding your patterns...",
+        "Looking inside...",
+        "Preparing your simple report..."
     ];
     
     let statusIndex = 0;
