@@ -2574,9 +2574,20 @@ function updateLockState() {
                     </div>
                 </div>
                 
-                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 15px; text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 15px; text-align: center;">
                     Payments processed securely via TagMango. Your access is instantly unlocked upon completion.
                 </p>
+                
+                <div style="margin-top: 30px; border-top: 1px dashed rgba(183, 140, 45, 0.3); padding-top: 25px; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
+                    <h4 style="font-family: var(--font-heading); color: var(--color-primary); font-size: 1.1rem; margin-bottom: 8px;">🎁 Unlock Premium Free with Referrals</h4>
+                    <p style="font-size: 0.88rem; color: #3e3e42; line-height: 1.45; margin-bottom: 15px;">
+                        Help us help more people! Share your unique referral link below. For every person who registers for a free trial using your link, <strong>both of you get 7 days of premium access</strong> completely free!
+                    </p>
+                    <div style="display: flex; gap: 8px; align-items: center; background: #ffffff; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(183, 140, 45, 0.2); max-width: 500px; margin: 0 auto; box-sizing: border-box;">
+                        <input type="text" id="lock-referral-link-display" readonly style="flex: 1; border: none; background: transparent; font-family: monospace; font-size: 0.82rem; color: #1C1C1E; outline: none; width: 100%;" value="${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(userEmail || '')}">
+                        <button class="btn btn-secondary btn-sm" onclick="copyLockReferralLink()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; white-space: nowrap; height: auto;">Copy Link</button>
+                    </div>
+                </div>
             </div>
         `;
         return;
@@ -3754,6 +3765,20 @@ function wipeChatHistory() {
     window.location.reload();
 }
 
+function copyLockReferralLink() {
+    const el = document.getElementById("lock-referral-link-display");
+    if (!el) return;
+    el.select();
+    el.setSelectionRange(0, 99999);
+    try {
+        navigator.clipboard.writeText(el.value);
+    } catch(err) {
+        document.execCommand("copy");
+    }
+    alert("Your referral link has been copied! Share it with friends and family to earn 7 days of free access.");
+}
+
+window.copyLockReferralLink = copyLockReferralLink;
 window.wipeChatHistory = wipeChatHistory;
 
 
