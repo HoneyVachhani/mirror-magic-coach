@@ -2433,7 +2433,7 @@ async function submitOnboardingForm(e) {
             return;
         }
         
-        if (data && (data.status === "active" || data.status === "success")) {
+        if (data && (data.status === "active" || data.status === "success" || data.status === "locked")) {
             localStorage.setItem("mirror_user_email", emailVal);
             localStorage.setItem("mirror_user_name", nameVal);
             localStorage.setItem("mirror_user_phone", phoneVal);
