@@ -699,7 +699,7 @@ const subscriptionModal = document.getElementById("subscription-modal");
 const chatLockOverlay = document.getElementById("chat-lock-overlay");
 
 // --- App State & Configuration ---
-const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby4FKWwC9vc8YR1SJEMWMCyJZBR4-huVlemfcGOJ9d7D34HHUqE5rsmACrOeWaazz8M/exec"; // Deployed Web App URL
+const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby_iXrwcn1HjgrAvtw7iXXQ4vBLo97fFVLtMGqtA6qAc2HSInrOx63ZNZg4FTKbGwkDbg/exec"; // Deployed Web App URL
 
 // Tagmango Product Checkout Links (Replace with your live Tagmango URLs)
 const TAGMANGO_WEEKLY_URL = "https://tagmango.com/buy/weekly-subscription-placeholder";
