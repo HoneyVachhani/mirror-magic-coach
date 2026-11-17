@@ -180,7 +180,8 @@ function doGet(e) {
       var referralDaysAdded = parseInt(userRow[8] || 0, 10);
       var name = userRow[4] || "";
       
-      if (accessStatus === "purchased" || accessStatus === "silver" || accessStatus === "gold" || accessStatus === "diamond" || accessStatus === "platinum") {
+      var activeTiers = ["purchased", "silver", "gold", "diamond", "platinum", "free", "active", "vip", "lifetime", "comp", "member"];
+      if (activeTiers.indexOf(accessStatus) > -1) {
         return ContentService.createTextOutput(JSON.stringify({
           status: "active",
           isTrial: false,
@@ -275,8 +276,17 @@ function doPost(e) {
       }
     }
     
-    // Check if the POST is a TagMango payment webhook confirmation
-    if (data.event && (data.event === "payment.successful" || data.event === "order.created.completed")) {
+    // Check if the POST is a TagMango payment or enrollment webhook
+    var eventType = (data.event || data.type || data.action || "").toString().toLowerCase();
+    var isTagMangoEnrollment = eventType.indexOf("payment.successful") > -1 ||
+                               eventType.indexOf("order.created") > -1 ||
+                               eventType.indexOf("order.completed") > -1 ||
+                               eventType.indexOf("subscriber") > -1 ||
+                               eventType.indexOf("member") > -1 ||
+                               eventType.indexOf("enroll") > -1 ||
+                               eventType.indexOf("access") > -1;
+    
+    if (isTagMangoEnrollment) {
       var customerEmail = "";
       if (data.data) {
         if (typeof data.data === "string") {
@@ -294,6 +304,8 @@ function doPost(e) {
             customerEmail = data.data.customer.email;
           } else if (data.data.order && data.data.order.email) {
             customerEmail = data.data.order.email;
+          } else if (data.data.subscriber && data.data.subscriber.email) {
+            customerEmail = data.data.subscriber.email;
           }
         }
       }
@@ -301,15 +313,15 @@ function doPost(e) {
         customerEmail = data.email;
       }
       
+      // Always log incoming TagMango webhook for visibility
+      var logSheet = ss.getSheetByName("WebhookLogs");
+      if (!logSheet) {
+        logSheet = ss.insertSheet("WebhookLogs");
+        logSheet.appendRow(["Date", "Event", "Email", "Payload"]);
+      }
+      logSheet.appendRow([new Date(), eventType, customerEmail || "unknown", rawContent]);
+      
       if (!customerEmail) {
-        // Fallback: log the payload if we cannot find email
-        var logSheet = ss.getSheetByName("WebhookLogs");
-        if (!logSheet) {
-          logSheet = ss.insertSheet("WebhookLogs");
-          logSheet.appendRow(["Date", "Payload"]);
-        }
-        logSheet.appendRow([new Date(), rawContent]);
-        
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Email not found in payload" }))
           .setMimeType(ContentService.MimeType.JSON);
       }
