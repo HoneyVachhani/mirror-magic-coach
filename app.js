@@ -2561,16 +2561,16 @@ function updateLockState() {
                     <!-- Annual Plan (Recommended) -->
                     <div class="pricing-card recommended">
                         <span class="pricing-badge">${recommendedLabel}</span>
-                        <div class="pricing-card-title">Annual</div>
+                        <div class="pricing-card-title">1-Year VIP Pass</div>
                         <div class="pricing-card-price" style="font-size: 1.8rem; margin-top: 5px;">₹648<span style="font-size: 0.95rem; font-weight: normal;"> / mo</span></div>
                         <div class="pricing-card-period">Billed ₹7,777 annually</div>
                         <div class="pricing-card-features" style="font-weight: 500;">
-                            <strong style="color: #2e7d32;">MAX SAVINGS: Save ₹4,211</strong><br>
+                            <strong style="color: #2e7d32;">VIP ACCESS (Free for Diamond)</strong><br>
                             24/7 Unlimited AI Coach Access<br>
                             Somatic & Metaphysical Mapping<br>
                             Daily Alignment & Reflection Logs
                         </div>
-                        <a href="https://learn.mirrormagicmovement.com/web/checkout/6a3527ceb7de6f41b26cd971" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
+                        <a href="https://learn.mirrormagicmovement.com/l/4a48b67f9b" target="_blank" class="pricing-card-btn primary">${annualPlanBtnText}</a>
                     </div>
                 </div>
                 
@@ -3249,9 +3249,9 @@ function handleOfferResponse(choice) {
 Option A — Continue daily AI coaching
 ₹999 per month
 
-Option B — Annual AI Coaching Plan
-₹7,777 per year (Save ₹4,211 compared to Monthly plan)
-Annual link: https://learn.mirrormagicmovement.com/web/checkout/6a3527ceb7de6f41b26cd971
+Option B — 1-Year VIP AI Coaching Pass
+₹7,777 per year (VIP Access included Free for Diamond members)
+VIP Pass link: https://learn.mirrormagicmovement.com/l/4a48b67f9b
 
 Let me know which option feels right for you, or we can keep speaking from the heart.`;
             addCoachMessage(offerDetails, []);
