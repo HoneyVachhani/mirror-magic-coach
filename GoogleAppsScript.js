@@ -134,11 +134,17 @@ function doGet(e) {
       
       var data = usersSheet.getDataRange().getValues();
       var userRowIndex = -1;
+      var activeTiers = ["purchased", "silver", "gold", "diamond", "platinum", "free", "active", "vip", "lifetime", "comp", "member"];
       
+      // Search all rows for this email — if any row has an active/paid tier, prioritize it!
       for (var i = 1; i < data.length; i++) {
-        if (data[i][0].toString().trim().toLowerCase() === email) {
+        if (data[i][0] && data[i][0].toString().trim().toLowerCase() === email) {
+          var rowStatus = (data[i][2] || "").toString().trim().toLowerCase();
           userRowIndex = i + 1;
-          break;
+          if (activeTiers.indexOf(rowStatus) > -1) {
+            // Found a paid/community tier row! Prioritize this row immediately
+            break;
+          }
         }
       }
       
